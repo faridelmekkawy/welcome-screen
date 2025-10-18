@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Welcome Display — Soueast</title>
+
+  <style>
+    /* ======= THEME — tweak freely ======= */
+    :root{
+      --bg:#0d1b2a;             /* page background (solid) */
+      --bg-accent:#13233a;      /* accent box background */
+      --accent:#ffd166;         /* highlight color for “Hello” */
+      --ink:#ffffff;            /* primary text color */
+      --muted:#c8d1db;          /* secondary text */
+      --shadow: 0 20px 80px rgba(0,0,0,.4);
+      --radius: 32px;
+    }
+    /* ======= Base layout ======= */
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    .wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:4vmin; position:relative; overflow:hidden}
+    /* Optional video background container (off by default) */
+    .bg-video{position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none}
+    .bg-video video{width:100%; height:100%; object-fit:cover; filter:brightness(.35)}
+    .board{
+      position:relative; z-index:1; width:min(1400px,94vw);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:var(--shadow); border-radius:var(--radius); padding:5vmin;
+      backdrop-filter: blur(10px);
+    }
+    .hello{
+      font-size: clamp(36px, 6.5vw, 110px);
+      margin:0; line-height:1.02; font-weight:900; letter-spacing:.4px;
+    }
+    .hello .hi{color:var(--accent)}
+    .sub{
+      margin-top:1.2vmin; color:var(--muted);
+      font-size: clamp(18px, 2.2vw, 34px); font-weight:600;
+    }
+    .time{
+      margin-top:2vmin; color:var(--muted);
+      font-size: clamp(14px, 1.6vw, 22px);
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:.7ch;
+      margin-top:3vmin; padding:10px 16px; border-radius:999px;
+      background:var(--bg-accent); color:#fff; border:1px solid rgba(255,255,255,.12);
+      font-weight:800; letter-spacing:.3px;
+    }
+    /* ======= Appear animation ======= */
+    .appear { animation: popIn .85s cubic-bezier(.2,.8,.2,1) forwards }
+    @keyframes popIn {
+      0% { transform: translateY(25px) scale(.98); opacity:0 }
+      60%{ transform: translateY(0) scale(1.02); opacity:1 }
+      100%{ transform: translateY(0) scale(1); opacity:1 }
+    }
+    /* ======= Temporary idle prompt ======= */
+    .idle{ opacity:.6 }
+    /* ======= Top-right test panel (hide in production) ======= */
+    .testbar{
+      position: fixed; right: 12px; top: 12px; z-index: 2;
+      display:flex; gap:8px; align-items:center; padding:8px;
+      background: rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.2);
+      border-radius:12px; backdrop-filter: blur(8px);
+    }
+    .testbar input, .testbar button{
+      font-size:14px; padding:10px 12px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.25); color:#fff; background:rgba(255,255,255,.08);
+      outline:none
+    }
+    .testbar input::placeholder{color:#ddd}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- OPTIONAL: uncomment to use a looping background video (local file or URL)
+    <div class="bg-video">
+      <video src="./background.mp4" autoplay muted loop playsinline></video>
+    </div>
+    -->
+
+    <div class="board" id="board">
+      <h1 class="hello" id="hello"><span class="hi">Hello</span> — Guest</h1>
+      <div class="sub" id="sub">Welcome to Soueast’s event</div>
+      <div class="time" id="time"></div>
+      <div class="badge" id="badge">Awaiting first check-in…</div>
+    </div>
+  </div>
+
+  <!-- Dev/Test mini panel -->
+  <div class="testbar" id="testbar">
+    <input id="testName" type="text" placeholder="Type a name and hit ‘Show’"/>
+    <button id="testShow">Show</button>
+    <button id="testIdle">Idle</button>
+  </div>
+
+  <!-- Firebase (module) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+
+    // ======= Match your scanner project =======
+    const EVENT_ID  = 'default'; // change via URL param ?event=xyz if you like
+    const PATH      = `events/${EVENT_ID}/welcome/latest`;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
+      authDomain: "events-339ce.firebaseapp.com",
+      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "events-339ce",
+      storageBucket: "events-339ce.firebasestorage.app",
+      messagingSenderId: "175601544315",
+      appId: "1:175601544315:web:00c94b4affa972b3a286de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // ======= UI refs =======
+    const helloEl = document.getElementById('hello');
+    const subEl   = document.getElementById('sub');
+    const timeEl  = document.getElementById('time');
+    const badgeEl = document.getElementById('badge');
+    const boardEl = document.getElementById('board');
+
+    // ======= Helpers =======
+    const fmtTime = (d)=> d.toLocaleString('en-GB', { hour12:false, timeZone:'Africa/Cairo' });
+    const setIdle = ()=>{
+      helloEl.innerHTML = `<span class="hi">Hello</span> — Guest`;
+      subEl.textContent = "Welcome to Soueast’s event";
+      timeEl.textContent = "Waiting for guests…";
+      badgeEl.textContent = "Ready";
+      boardEl.classList.add('idle');
+    };
+    const showMsg = ({name, token})=>{
+      const safeName = (name||'Guest').trim() || 'Guest';
+      helloEl.innerHTML = `<span class="hi">Hello</span> — ${safeName}`;
+      subEl.textContent = "Welcome to Soueast’s event";
+      timeEl.textContent = fmtTime(new Date());
+      badgeEl.textContent = token ? `Token: ${token}` : 'Enjoy your time!';
+      boardEl.classList.remove('idle');
+      boardEl.classList.remove('appear'); void boardEl.offsetWidth; boardEl.classList.add('appear');
+      clearTimeout(window.__idleTimer);
+      window.__idleTimer = setTimeout(()=>boardEl.classList.add('idle'), 10000);
+    };
+    const looksLikeToken = (s) => !!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
+
+    async function resolveNameOrFetch(nameFromPing, token){
+      // If name already looks human (has space), use it
+      if (nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
+
+      // If token provided, try to fetch full name from guests/{token}
+      if (token){
+        try{
+          const snap = await get(ref(db, `events/${EVENT_ID}/guests/${token}`));
+          if (snap.exists()){
+            const g = snap.val() || {};
+            const full =
+              (g.name && g.name.trim()) ||
+              [g.first_name, g.last_name].filter(Boolean).join(' ').trim() ||
+              nameFromPing || token;
+            return full;
+          }
+        }catch(_e){}
+      }
+      // Fallbacks
+      if (nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
+      return token || 'Guest';
+    }
+
+    // Initial state
+    setIdle();
+
+    // ======= Live subscription to your scanner’s “latest” =======
+    onValue(ref(db, PATH), async (snap)=>{
+      const val = snap.val();
+      if (!val) return;
+      const token = val.token || '';
+      const incomingName = val.name || '';
+      const finalName = await resolveNameOrFetch(incomingName, token);
+      showMsg({ name: finalName, token });
+    });
+
+    // ======= Manual test (works without scanner) =======
+    const testName = document.getElementById('testName');
+    document.getElementById('testShow').onclick = ()=>{
+      const name = testName.value || 'Guest';
+      showMsg({name, token:'MANUAL'});
+      testName.value = '';
+    };
+    document.getElementById('testIdle').onclick = setIdle;
+
+    // URL params: ?demo=Karim&event=myEvent
+    const params = new URLSearchParams(location.search);
+    const demo = params.get('demo');
+    const eventParam = params.get('event');
+    if (eventParam){ /* optional: swap EVENT_ID logic if you want dynamic events */ }
+    if (demo) showMsg({name: demo, token:'DEMO'});
+  </script>
+</body>
+</html>
