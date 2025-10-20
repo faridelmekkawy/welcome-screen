@@ -10,15 +10,13 @@
     html,body{height:100%;margin:0;background:#000;color:#fff;
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 
-    /* === Fullscreen looping video === */
     .bg-video{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
     .bg-video video{width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
+    .bg-fallback{position:absolute; inset:0; background:#000 center/cover no-repeat; display:none}
 
-    /* === Center overlay === */
     .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
       padding:4vmin;z-index:1;pointer-events:none}
 
-    /* === Soueast badge card === */
     .badge-card{display:none;width:min(420px,90vw);color:#fff;text-align:center;position:relative;
       filter:drop-shadow(0 22px 50px rgba(0,0,0,.55));transform:translateZ(0);pointer-events:auto;}
     .badge-card.show{display:block;animation:popIn .85s cubic-bezier(.2,.8,.2,1) forwards}
@@ -28,14 +26,11 @@
       100%{transform:translateY(0) scale(1);opacity:1}
     }
 
-    /* === Badge background === */
     .badge-photo{
       position:relative;width:100%;aspect-ratio:2/3;
       background:#111 center/cover no-repeat;
       border-radius:28px;border:1px solid rgba(255,255,255,.15);overflow:hidden;
     }
-
-    /* === Name overlay === */
     .name-box{
       position:absolute;left:50%;transform:translateX(-50%);bottom:16%;
       width:80%;background:rgba(0,0,0,.88);color:#fff;text-align:center;
@@ -43,8 +38,6 @@
       font-size:clamp(18px,2.6vw,24px);font-weight:800;letter-spacing:.3px;
       box-shadow:var(--shadow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
-
-    /* === Token (optional small chip) === */
     .token-chip{
       position:absolute;left:50%;transform:translateX(-50%);bottom:10%;
       padding:6px 10px;border-radius:999px;font-size:12px;
@@ -52,7 +45,6 @@
       backdrop-filter:blur(6px);
     }
 
-    /* === Test bar === */
     .testbar{position:fixed;right:12px;top:12px;z-index:2;display:flex;gap:8px;align-items:center;
       padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);
       border-radius:12px;backdrop-filter:blur(8px);}
@@ -64,16 +56,20 @@
   </style>
 </head>
 <body>
-  <!-- === Background Video === -->
+  <!-- Background Video + fallback image -->
   <div class="bg-video">
-    <video id="bgvid" autoplay muted loop playsinline preload="auto">
+    <video id="bgvid" autoplay muted loop playsinline preload="auto"
+           poster="https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true"
+           crossorigin="anonymous">
       <source src="https://github.com/faridelmekkawy/welcome-screen/raw/refs/heads/main/Welcome%20Video%20(1).mp4" type="video/mp4">
     </video>
+    <div id="fallback" class="bg-fallback"
+         style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')"></div>
   </div>
 
-  <!-- === Overlay Stage === -->
+  <!-- Overlay -->
   <div class="stage">
-    <div class="badge-card" id="badgeCard">
+    <div class="badge-card show" id="badgeCard"><!-- SHOW by default for testing -->
       <div class="badge-photo" id="badgePhoto"
            style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')">
         <div class="name-box" id="guestName">Guest</div>
@@ -82,18 +78,39 @@
     </div>
   </div>
 
-  <!-- === Dev/Test Panel (hide in production) === -->
-  <div class="testbar" id="testbar">
+  <!-- Test -->
+  <div class="testbar">
     <input id="testName" type="text" placeholder="Type a name and hit ‘Show’"/>
     <button id="testShow">Show</button>
-    <button id="testIdle">Hide</button>
+    <button id="testHide">Hide</button>
   </div>
 
-  <!-- === Firebase Logic === -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
     import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
 
+    const cardEl  = document.getElementById('badgeCard');
+    const nameEl  = document.getElementById('guestName');
+    const tokenEl = document.getElementById('tokenChip');
+    const bgvid   = document.getElementById('bgvid');
+    const fallback= document.getElementById('fallback');
+
+    // --- Video diagnostics & fallback ---
+    bgvid.addEventListener('error', () => {
+      console.warn('[video] error loading video — showing fallback image');
+      fallback.style.display = 'block';
+    });
+    bgvid.addEventListener('stalled', () => {
+      console.warn('[video] stalled — showing fallback');
+      fallback.style.display = 'block';
+    });
+    bgvid.addEventListener('playing', () => {
+      fallback.style.display = 'none';
+    });
+    // try to start explicitly (some devices need it even if muted)
+    bgvid.play().catch(e=>console.warn('[video] play blocked:', e));
+
+    // --- Firebase live overlay (works when your scanner writes to /welcome/latest) ---
     const params = new URLSearchParams(location.search);
     const EVENT_ID = params.get('event') || 'default';
     const PATH = `events/${EVENT_ID}/welcome/latest`;
@@ -107,59 +124,55 @@
       messagingSenderId: "175601544315",
       appId: "1:175601544315:web:00c94b4affa972b3a286de"
     };
-
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const db  = getDatabase(app);
 
-    const cardEl = document.getElementById('badgeCard');
-    const nameEl = document.getElementById('guestName');
-    const tokenEl = document.getElementById('tokenChip');
-
-    const looksLikeToken = (s)=>!!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
+    const looksLikeToken = s => !!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
 
     async function resolveNameOrFetch(nameFromPing, token){
-      if(nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
-      if(token){
+      if (nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
+      if (token){
         try{
-          const snap = await get(ref(db,`events/${EVENT_ID}/guests/${token}`));
-          if(snap.exists()){
-            const g=snap.val()||{};
-            const full=(g.name?.trim())||[g.first_name,g.last_name].filter(Boolean).join(' ').trim()||nameFromPing||token;
-            return full;
+          const snap = await get(ref(db, `events/${EVENT_ID}/guests/${token}`));
+          if (snap.exists()){
+            const g = snap.val() || {};
+            return (g.name?.trim()) || [g.first_name,g.last_name].filter(Boolean).join(' ').trim() || nameFromPing || token;
           }
-        }catch(_e){}
+        }catch(e){ console.warn('[firebase] guest lookup failed:', e); }
       }
-      if(nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
-      return token||'Guest';
+      if (nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
+      return token || 'Guest';
     }
 
-    function showOverlay({name,token}){
-      nameEl.textContent=name||'Guest';
-      if(token){tokenEl.textContent=`Token: ${token}`;tokenEl.style.display='inline-flex';}
-      else tokenEl.style.display='none';
-
-      cardEl.classList.remove('show');void cardEl.offsetWidth;cardEl.classList.add('show');
+    function showOverlay({name, token}){
+      nameEl.textContent = name || 'Guest';
+      if (token){ tokenEl.textContent = `Token: ${token}`; tokenEl.style.display = 'inline-flex'; }
+      else tokenEl.style.display = 'none';
+      cardEl.classList.remove('show'); void cardEl.offsetWidth; cardEl.classList.add('show');
       clearTimeout(window.__hideTimer);
-      window.__hideTimer=setTimeout(()=>{cardEl.classList.remove('show');},10000);
+      window.__hideTimer = setTimeout(()=> cardEl.classList.remove('show'), 10000);
     }
 
-    // Firebase listener for new scans
-    onValue(ref(db,PATH),async(snap)=>{
-      const val=snap.val(); if(!val)return;
-      const token=val.token||''; const incomingName=val.name||'';
-      const finalName=await resolveNameOrFetch(incomingName,token);
-      showOverlay({name:finalName,token});
+    onValue(ref(db, PATH), async snap=>{
+      const val = snap.val();
+      if (!val) return;
+      const token = val.token || '';
+      const incomingName = val.name || '';
+      const finalName = await resolveNameOrFetch(incomingName, token);
+      showOverlay({ name: finalName, token });
     });
 
-    // Manual test buttons
-    const testName=document.getElementById('testName');
-    document.getElementById('testShow').onclick=()=>{
-      showOverlay({name:testName.value||'Guest',token:'DEMO'});testName.value='';
+    // Test buttons
+    document.getElementById('testShow').onclick = ()=>{
+      const v = document.getElementById('testName').value || 'Guest';
+      showOverlay({ name: v, token:'DEMO' });
     };
-    document.getElementById('testIdle').onclick=()=>cardEl.classList.remove('show');
+    document.getElementById('testHide').onclick = ()=> cardEl.classList.remove('show');
 
-    const demo=params.get('demo');
-    if(demo)showOverlay({name:demo,token:'DEMO'});
+    // Auto show demo name once so you can SEE it even if Firebase/video fails
+    if (!params.get('nodefault')) {
+      setTimeout(()=> showOverlay({ name: 'Naiera Mostafa', token:'DEMO' }), 600);
+    }
   </script>
 </body>
 </html>
