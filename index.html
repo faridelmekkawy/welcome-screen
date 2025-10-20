@@ -59,19 +59,19 @@
   <!-- Background Video + fallback image -->
   <div class="bg-video">
     <video id="bgvid" autoplay muted loop playsinline preload="auto"
-           poster="https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true"
+           poster="https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png"
            crossorigin="anonymous">
-      <source src="https://github.com/faridelmekkawy/welcome-screen/raw/refs/heads/main/Welcome%20Video%20(1).mp4" type="video/mp4">
+      <source src="https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/Welcome%20Video%20(1).mp4" type="video/mp4">
     </video>
     <div id="fallback" class="bg-fallback"
-         style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')"></div>
+         style="background-image:url('https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png')"></div>
   </div>
 
   <!-- Overlay -->
   <div class="stage">
-    <div class="badge-card show" id="badgeCard"><!-- SHOW by default for testing -->
+    <div class="badge-card show" id="badgeCard">
       <div class="badge-photo" id="badgePhoto"
-           style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')">
+           style="background-image:url('https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png')">
         <div class="name-box" id="guestName">Guest</div>
         <div class="token-chip" id="tokenChip" style="display:none"></div>
       </div>
@@ -95,7 +95,6 @@
     const bgvid   = document.getElementById('bgvid');
     const fallback= document.getElementById('fallback');
 
-    // --- Video diagnostics & fallback ---
     bgvid.addEventListener('error', () => {
       console.warn('[video] error loading video — showing fallback image');
       fallback.style.display = 'block';
@@ -107,10 +106,9 @@
     bgvid.addEventListener('playing', () => {
       fallback.style.display = 'none';
     });
-    // try to start explicitly (some devices need it even if muted)
     bgvid.play().catch(e=>console.warn('[video] play blocked:', e));
 
-    // --- Firebase live overlay (works when your scanner writes to /welcome/latest) ---
+    // Firebase live overlay
     const params = new URLSearchParams(location.search);
     const EVENT_ID = params.get('event') || 'default';
     const PATH = `events/${EVENT_ID}/welcome/latest`;
@@ -169,9 +167,9 @@
     };
     document.getElementById('testHide').onclick = ()=> cardEl.classList.remove('show');
 
-    // Auto show demo name once so you can SEE it even if Firebase/video fails
+    // Show demo name automatically
     if (!params.get('nodefault')) {
-      setTimeout(()=> showOverlay({ name: 'Naiera Mostafa', token:'DEMO' }), 600);
+      setTimeout(()=> showOverlay({ name: 'Naiera Mostafa', token:'DEMO' }), 800);
     }
   </script>
 </body>
