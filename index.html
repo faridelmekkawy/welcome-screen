@@ -1,131 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Welcome Screen</title>
-<style>
-  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
-  video.bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-  .badge{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-  .badge-photo{width:340px;height:600px;background:#111 center/contain no-repeat;
-               display:flex;align-items:flex-end;justify-content:center;border-radius:16px}
-  .name{margin-bottom:72px;background:rgba(0,0,0,.82);padding:10px 28px;border-radius:10px;
-        font:800 22px/1 system-ui,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.3px}
-  .note{position:fixed;left:10px;bottom:10px;font-size:12px;color:#bbb;opacity:.8}
-  @media (max-width:600px){.badge-photo{width:280px;height:500px}.name{font-size:18px;margin-bottom:52px}}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Welcome Screen</title>
+  <style>
+    html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+    video.bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+    .badge{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+    .badge-photo{width:340px;height:600px;background:#111 center/contain no-repeat;
+                 display:flex;align-items:flex-end;justify-content:center;border-radius:16px}
+    .name{margin-bottom:72px;background:rgba(0,0,0,.82);padding:10px 28px;border-radius:10px;
+          font:800 22px/1 system-ui,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.3px}
+    .note{position:fixed;left:10px;bottom:10px;font-size:12px;color:#bbb;opacity:.8}
+    @media (max-width:600px){.badge-photo{width:280px;height:500px}.name{font-size:18px;margin-bottom:52px}}
+  </style>
 </head>
 <body>
-  <video class="bg" id="bg" autoplay muted loop playsinline preload="auto"></video>
+  <video class="bg" id="bg" autoplay muted loop playsinline preload="auto">
+    <source src="/public/welcome.mp4" type="video/mp4"/>
+  </video>
 
   <div class="badge">
-    <div class="badge-photo" id="photo">
+    <div class="badge-photo" id="photo" style="background-image:url('/public/badge.png')">
       <div class="name" id="guestName">Guest</div>
     </div>
   </div>
 
   <div class="note" id="note"></div>
 
-<script>
-/* ========= CONFIG: candidate URLs (tries in order) ========= */
-const IMG_CANDIDATES = [
-  "/soueast_badge.png",
-  "./soueast_badge.png",
-  "/public/soueast_badge.png",
-  "https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png"
-];
+  <script>
+    // Optional: set guest name via ?name=Your%20Name
+    const p = new URLSearchParams(location.search).get("name");
+    if (p) document.getElementById("guestName").textContent = p;
 
-const VID_CANDIDATES = [
-  "/Welcome Video.mp4",
-  "/Welcome Video.mp4",
-  "./Welcome Video.mp4",
-  "/public/Welcome Video.mp4",
-  "https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/Welcome%20Video%20.mp4"
-];
-
-/* ========= Helpers ========= */
-const $ = (id)=>document.getElementById(id);
-const note = $('note');
-function say(txt){ note.textContent = txt; }
-
-function tryImage(urls){
-  return new Promise((resolve,reject)=>{
-    const next = (i)=>{
-      if(i>=urls.length) return reject(new Error("no image found"));
-      const img = new Image();
-      img.onload = ()=>resolve(urls[i]);
-      img.onerror = ()=>next(i+1);
-      img.src = urls[i] + (urls[i].includes("http") ? ("?v="+Date.now()) : "");
-    };
-    next(0);
-  });
-}
-
-function tryVideo(urls){
-  return new Promise((resolve,reject)=>{
-    const v = document.createElement('video');
-    v.muted = true; v.playsInline = true;
-    const next = (i)=>{
-      if(i>=urls.length) return reject(new Error("no video found"));
-      v.src = urls[i];
-      let tried = false;
-      const ok = ()=>{ if(!tried){ tried=true; cleanup(); resolve(urls[i]); } };
-      const bad= ()=>{ if(!tried){ tried=true; cleanup(); next(i+1); } };
-      const cleanup = ()=>{
-        v.removeEventListener('canplay', ok);
-        v.removeEventListener('loadeddata', ok);
-        v.removeEventListener('error', bad);
-        v.removeEventListener('stalled', bad);
-      };
-      v.addEventListener('canplay', ok, {once:true});
-      v.addEventListener('loadeddata', ok, {once:true});
-      v.addEventListener('error', bad, {once:true});
-      v.addEventListener('stalled', bad, {once:true});
-      // kick it
-      v.load();
-    };
-    next(0);
-  });
-}
-
-/* ========= Boot ========= */
-(async function boot(){
-  // Set name via URL (?name=Your%20Name)
-  const p = new URLSearchParams(location.search).get("name");
-  if(p) $('guestName').textContent = p;
-
-  // Resolve image
-  say("Loading assets…");
-  try {
-    const img = await tryImage(IMG_CANDIDATES);
-    $('photo').style.backgroundImage = `url('${img}')`;
-  } catch {
-    say("Image not found (still running)");
-  }
-
-  // Resolve video
-  const bg = $('bg');
-  try{
-    const vid = await tryVideo(VID_CANDIDATES);
-    bg.setAttribute('poster', IMG_CANDIDATES[0]); // poster best-effort
-    bg.innerHTML = ""; // clear old sources
-    const src = document.createElement('source');
-    src.src = vid; src.type = "video/mp4";
-    bg.appendChild(src);
-    bg.load();
-    bg.play().catch(()=>{ /* some browsers require user interaction */ });
-    say("");
-  }catch{
-    // No video found: keep static image background
-    if ($('photo').style.backgroundImage) {
-      // leave as is
-      say("Video not found — showing static image");
-    } else {
-      say("Assets missing — check filenames/paths");
-    }
-  }
-})();
-</script>
+    // If the video fails (e.g., blocked autoplay), show a small hint
+    const note = document.getElementById("note");
+    document.getElementById("bg").addEventListener("error", () => {
+      note.textContent = "Video not found or blocked — showing static image.";
+    });
+    document.getElementById("bg").play().catch(() => {
+      note.textContent = "Autoplay blocked — tap to play.";
+      document.body.addEventListener("click", () => document.getElementById("bg").play(), { once:true });
+    });
+  </script>
 </body>
 </html>
