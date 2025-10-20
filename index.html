@@ -14,10 +14,12 @@
   </style>
 </head>
 <body>
+  <!-- Looping background video (served from /public) -->
   <video class="bg" autoplay muted loop playsinline preload="auto" poster="/soueast_badge.png">
     <source src="/Welcome%20Video.mp4" type="video/mp4" />
   </video>
 
+  <!-- Soueast badge + editable name -->
   <div class="badge">
     <div class="badge-photo">
       <div class="name" id="guestName">Guest</div>
@@ -25,6 +27,7 @@
   </div>
 
   <script>
+    // Optional: set name via URL, e.g. /?name=Naiera%20Mostafa
     const p=new URLSearchParams(location.search).get("name");
     if(p) document.getElementById("guestName").textContent=p;
   </script>
