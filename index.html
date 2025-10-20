@@ -1,47 +1,94 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Welcome Screen</title>
   <style>
-    html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
-    video.bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-    .badge{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-    .badge-photo{width:340px;height:600px;background:#111 center/contain no-repeat;
-                 display:flex;align-items:flex-end;justify-content:center;border-radius:16px}
-    .name{margin-bottom:72px;background:rgba(0,0,0,.82);padding:10px 28px;border-radius:10px;
-          font:800 22px/1 system-ui,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.3px}
-    .note{position:fixed;left:10px;bottom:10px;font-size:12px;color:#bbb;opacity:.8}
-    @media (max-width:600px){.badge-photo{width:280px;height:500px}.name{font-size:18px;margin-bottom:52px}}
+    html,body{
+      margin:0;
+      height:100%;
+      background:#000;
+      color:#fff;
+      font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      overflow:hidden;
+    }
+    video.bg{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      z-index:-2;
+    }
+    .badge{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .badge-photo{
+      width:340px;
+      height:600px;
+      background:#111 center/contain no-repeat;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      border-radius:16px;
+    }
+    .name{
+      margin-bottom:72px;
+      background:rgba(0,0,0,.82);
+      padding:10px 28px;
+      border-radius:10px;
+      font:800 22px/1 system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      letter-spacing:.3px;
+    }
+    .note{
+      position:fixed;
+      left:10px;
+      bottom:10px;
+      font-size:12px;
+      color:#bbb;
+      opacity:.8;
+    }
+    @media (max-width:600px){
+      .badge-photo{width:280px;height:500px}
+      .name{font-size:18px;margin-bottom:52px}
+    }
   </style>
 </head>
 <body>
+  <!-- Background video -->
   <video class="bg" id="bg" autoplay muted loop playsinline preload="auto">
-    <source src="/public/welcome.mp4" type="video/mp4"/>
+    <source src="./public/welcome.mp4" type="video/mp4"/>
   </video>
 
+  <!-- Badge overlay -->
   <div class="badge">
-    <div class="badge-photo" id="photo" style="background-image:url('/public/badge.png')">
+    <div class="badge-photo" id="photo" style="background-image:url('./public/badge.png')">
       <div class="name" id="guestName">Guest</div>
     </div>
   </div>
 
+  <!-- Footer note -->
   <div class="note" id="note"></div>
 
   <script>
-    // Optional: set guest name via ?name=Your%20Name
+    // Update guest name from ?name= query parameter
     const p = new URLSearchParams(location.search).get("name");
     if (p) document.getElementById("guestName").textContent = p;
 
-    // If the video fails (e.g., blocked autoplay), show a small hint
+    // Handle video autoplay / error fallback
+    const bg = document.getElementById("bg");
     const note = document.getElementById("note");
-    document.getElementById("bg").addEventListener("error", () => {
+    bg.addEventListener("error", () => {
       note.textContent = "Video not found or blocked — showing static image.";
     });
-    document.getElementById("bg").play().catch(() => {
+    bg.play().catch(() => {
       note.textContent = "Autoplay blocked — tap to play.";
-      document.body.addEventListener("click", () => document.getElementById("bg").play(), { once:true });
+      document.body.addEventListener("click", () => bg.play(), { once:true });
     });
   </script>
 </body>
