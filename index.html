@@ -1,59 +1,67 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Soueast Welcome — Video + Scan Overlay</title>
-  <style>
-    :root{--shadow:0 20px 80px rgba(0,0,0,.45);}
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:#000;color:#fff;
-      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Soueast Welcome — Video + Scan Overlay (Debug)</title>
+<style>
+  :root{--shadow:0 20px 80px rgba(0,0,0,.45);}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#000;color:#fff;
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 
-    .bg-video{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
-    .bg-video video{width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
-    .bg-fallback{position:absolute; inset:0; background:#000 center/cover no-repeat; display:none}
+  .bg-video{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
+  .bg-video video{width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
+  .bg-fallback{position:absolute; inset:0; background:#000 center/cover no-repeat; display:none}
 
-    .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-      padding:4vmin;z-index:1;pointer-events:none}
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:4vmin;z-index:1;pointer-events:none}
 
-    .badge-card{display:none;width:min(420px,90vw);color:#fff;text-align:center;position:relative;
-      filter:drop-shadow(0 22px 50px rgba(0,0,0,.55));transform:translateZ(0);pointer-events:auto;}
-    .badge-card.show{display:block;animation:popIn .85s cubic-bezier(.2,.8,.2,1) forwards}
-    @keyframes popIn{
-      0%{transform:translateY(25px) scale(.98);opacity:0}
-      60%{transform:translateY(0) scale(1.02);opacity:1}
-      100%{transform:translateY(0) scale(1);opacity:1}
-    }
+  .badge-card{display:none;width:min(420px,90vw);color:#fff;text-align:center;position:relative;
+    filter:drop-shadow(0 22px 50px rgba(0,0,0,.55));transform:translateZ(0);pointer-events:auto;}
+  .badge-card.show{display:block;animation:popIn .85s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes popIn{
+    0%{transform:translateY(25px) scale(.98);opacity:0}
+    60%{transform:translateY(0) scale(1.02);opacity:1}
+    100%{transform:translateY(0) scale(1);opacity:1}
+  }
 
-    .badge-photo{
-      position:relative;width:100%;aspect-ratio:2/3;
-      background:#111 center/cover no-repeat;
-      border-radius:28px;border:1px solid rgba(255,255,255,.15);overflow:hidden;
-    }
-    .name-box{
-      position:absolute;left:50%;transform:translateX(-50%);bottom:16%;
-      width:80%;background:rgba(0,0,0,.88);color:#fff;text-align:center;
-      padding:12px 10px;border-radius:10px;
-      font-size:clamp(18px,2.6vw,24px);font-weight:800;letter-spacing:.3px;
-      box-shadow:var(--shadow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .token-chip{
-      position:absolute;left:50%;transform:translateX(-50%);bottom:10%;
-      padding:6px 10px;border-radius:999px;font-size:12px;
-      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
-      backdrop-filter:blur(6px);
-    }
+  .badge-photo{
+    position:relative;width:100%;aspect-ratio:2/3;
+    background:#111 center/cover no-repeat;
+    border-radius:28px;border:1px solid rgba(255,255,255,.15);overflow:hidden;
+  }
+  .name-box{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:16%;
+    width:80%;background:rgba(0,0,0,.88);color:#fff;text-align:center;
+    padding:12px 10px;border-radius:10px;
+    font-size:clamp(18px,2.6vw,24px);font-weight:800;letter-spacing:.3px;
+    box-shadow:var(--shadow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .token-chip{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:10%;
+    padding:6px 10px;border-radius:999px;font-size:12px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
+    backdrop-filter:blur(6px);
+  }
 
-    .testbar{position:fixed;right:12px;top:12px;z-index:2;display:flex;gap:8px;align-items:center;
-      padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);
-      border-radius:12px;backdrop-filter:blur(8px);}
-    .testbar input,.testbar button{
-      font-size:14px;padding:10px 12px;border-radius:10px;
-      border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08);outline:none
-    }
-    .testbar input::placeholder{color:#ddd}
-  </style>
+  /* Tiny debug bar */
+  .debug{
+    position:fixed;left:12px;top:12px;z-index:3;
+    background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);
+    padding:6px 10px;border-radius:10px;font-size:12px;line-height:1.3;max-width:58vw
+  }
+  .ok{color:#9ae6b4}
+  .bad{color:#feb2b2}
+  .testbar{position:fixed;right:12px;top:12px;z-index:2;display:flex;gap:8px;align-items:center;
+    padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);
+    border-radius:12px;backdrop-filter:blur(8px);}
+  .testbar input,.testbar button{
+    font-size:14px;padding:10px 12px;border-radius:10px;
+    border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08);outline:none
+  }
+  .testbar input::placeholder{color:#ddd}
+</style>
 </head>
 <body>
   <!-- Background Video + fallback image -->
@@ -61,7 +69,7 @@
     <video id="bgvid" autoplay muted loop playsinline preload="auto"
            poster="https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png"
            crossorigin="anonymous">
-      <source src="https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/Welcome%20Video%20(1).mp4" type="video/mp4">
+      <source id="vidSrc" src="https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/Welcome%20Video%20(1).mp4" type="video/mp4">
     </video>
     <div id="fallback" class="bg-fallback"
          style="background-image:url('https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png')"></div>
@@ -70,107 +78,87 @@
   <!-- Overlay -->
   <div class="stage">
     <div class="badge-card show" id="badgeCard">
-      <div class="badge-photo" id="badgePhoto"
-           style="background-image:url('https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png')">
+      <div class="badge-photo" id="badgePhoto"><!-- background is set by JS after we verify it loads -->
         <div class="name-box" id="guestName">Guest</div>
         <div class="token-chip" id="tokenChip" style="display:none"></div>
       </div>
     </div>
   </div>
 
-  <!-- Test -->
+  <!-- Debug + Test -->
+  <div class="debug" id="debug">Loading…</div>
   <div class="testbar">
     <input id="testName" type="text" placeholder="Type a name and hit ‘Show’"/>
     <button id="testShow">Show</button>
     <button id="testHide">Hide</button>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+<script type="module">
+  // === 1) CONFIG: use your GitHub RAW URLs ===
+  const IMG_URL  = "https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png";
+  const VIDEO_URL= "https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/Welcome%20Video%20(1).mp4";
 
-    const cardEl  = document.getElementById('badgeCard');
-    const nameEl  = document.getElementById('guestName');
-    const tokenEl = document.getElementById('tokenChip');
-    const bgvid   = document.getElementById('bgvid');
-    const fallback= document.getElementById('fallback');
+  // === 2) Elements ===
+  const dbg = document.getElementById('debug');
+  const photoEl = document.getElementById('badgePhoto');
+  const cardEl  = document.getElementById('badgeCard');
+  const nameEl  = document.getElementById('guestName');
+  const tokenEl = document.getElementById('tokenChip');
+  const bgvid   = document.getElementById('bgvid');
+  const vidSrc  = document.getElementById('vidSrc');
+  const fallback= document.getElementById('fallback');
 
-    bgvid.addEventListener('error', () => {
-      console.warn('[video] error loading video — showing fallback image');
-      fallback.style.display = 'block';
-    });
-    bgvid.addEventListener('stalled', () => {
-      console.warn('[video] stalled — showing fallback');
-      fallback.style.display = 'block';
-    });
-    bgvid.addEventListener('playing', () => {
-      fallback.style.display = 'none';
-    });
-    bgvid.play().catch(e=>console.warn('[video] play blocked:', e));
+  // === 3) Prove the PNG actually loads before using it as background ===
+  function setDebug(msg){ dbg.innerHTML = msg; }
+  function ok(s){ return `<span class="ok">✔</span> ${s}` }
+  function bad(s){ return `<span class="bad">✖</span> ${s}` }
 
-    // Firebase live overlay
-    const params = new URLSearchParams(location.search);
-    const EVENT_ID = params.get('event') || 'default';
-    const PATH = `events/${EVENT_ID}/welcome/latest`;
+  // Try to load image explicitly
+  const testImg = new Image();
+  testImg.crossOrigin = "anonymous";
+  testImg.onload = () => {
+    photoEl.style.backgroundImage = `url('${IMG_URL}')`;
+    setDebug([
+      ok("Image loaded"),
+      `<small>${IMG_URL}</small>`
+    ].join("<br>"));
+  };
+  testImg.onerror = () => {
+    setDebug([
+      bad("Image failed to load — check the URL or make the repo public"),
+      `<small>${IMG_URL}</small>`
+    ].join("<br>"));
+    // leave default dark background so you see it failed
+  };
+  testImg.src = IMG_URL + `?v=${Date.now()}`; // cache-bust
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
-      authDomain: "events-339ce.firebaseapp.com",
-      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "events-339ce",
-      storageBucket: "events-339ce.firebasestorage.app",
-      messagingSenderId: "175601544315",
-      appId: "1:175601544315:web:00c94b4affa972b3a286de"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
+  // === 4) Video diagnostics + fallback ===
+  vidSrc.src = VIDEO_URL;
+  bgvid.load();
+  bgvid.play().catch(e=>{
+    setDebug(dbg.innerHTML + "<br>" + bad("Autoplay blocked / load failed (will show fallback)"));
+    fallback.style.display = 'block';
+  });
+  bgvid.addEventListener('playing', ()=>{
+    fallback.style.display = 'none';
+    setDebug(dbg.innerHTML + "<br>" + ok("Video playing"));
+  });
+  bgvid.addEventListener('error', ()=>{
+    fallback.style.display = 'block';
+    setDebug(dbg.innerHTML + "<br>" + bad("Video error — using fallback image"));
+  });
+  bgvid.addEventListener('stalled', ()=>{
+    fallback.style.display = 'block';
+    setDebug(dbg.innerHTML + "<br>" + bad("Video stalled — using fallback image"));
+  });
 
-    const looksLikeToken = s => !!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
-
-    async function resolveNameOrFetch(nameFromPing, token){
-      if (nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
-      if (token){
-        try{
-          const snap = await get(ref(db, `events/${EVENT_ID}/guests/${token}`));
-          if (snap.exists()){
-            const g = snap.val() || {};
-            return (g.name?.trim()) || [g.first_name,g.last_name].filter(Boolean).join(' ').trim() || nameFromPing || token;
-          }
-        }catch(e){ console.warn('[firebase] guest lookup failed:', e); }
-      }
-      if (nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
-      return token || 'Guest';
-    }
-
-    function showOverlay({name, token}){
-      nameEl.textContent = name || 'Guest';
-      if (token){ tokenEl.textContent = `Token: ${token}`; tokenEl.style.display = 'inline-flex'; }
-      else tokenEl.style.display = 'none';
-      cardEl.classList.remove('show'); void cardEl.offsetWidth; cardEl.classList.add('show');
-      clearTimeout(window.__hideTimer);
-      window.__hideTimer = setTimeout(()=> cardEl.classList.remove('show'), 10000);
-    }
-
-    onValue(ref(db, PATH), async snap=>{
-      const val = snap.val();
-      if (!val) return;
-      const token = val.token || '';
-      const incomingName = val.name || '';
-      const finalName = await resolveNameOrFetch(incomingName, token);
-      showOverlay({ name: finalName, token });
-    });
-
-    // Test buttons
-    document.getElementById('testShow').onclick = ()=>{
-      const v = document.getElementById('testName').value || 'Guest';
-      showOverlay({ name: v, token:'DEMO' });
-    };
-    document.getElementById('testHide').onclick = ()=> cardEl.classList.remove('show');
-
-    // Show demo name automatically
-    if (!params.get('nodefault')) {
-      setTimeout(()=> showOverlay({ name: 'Naiera Mostafa', token:'DEMO' }), 800);
-    }
-  </script>
+  // === 5) Test buttons ===
+  document.getElementById('testShow').onclick = ()=>{
+    const v = document.getElementById('testName').value || 'Guest';
+    nameEl.textContent = v;
+    cardEl.classList.remove('show'); void cardEl.offsetWidth; cardEl.classList.add('show');
+  };
+  document.getElementById('testHide').onclick = ()=> cardEl.classList.remove('show');
+</script>
 </body>
 </html>
