@@ -1,178 +1,131 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Soueast Welcome — Video + Scan Overlay</title>
-  <style>
-    :root{--shadow:0 20px 80px rgba(0,0,0,.45);}
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:#000;color:#fff;
-      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
-
-    .bg-video{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
-    .bg-video video{width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
-    .bg-fallback{position:absolute; inset:0; background:#000 center/cover no-repeat; display:none}
-
-    .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-      padding:4vmin;z-index:1;pointer-events:none}
-
-    .badge-card{display:none;width:min(420px,90vw);color:#fff;text-align:center;position:relative;
-      filter:drop-shadow(0 22px 50px rgba(0,0,0,.55));transform:translateZ(0);pointer-events:auto;}
-    .badge-card.show{display:block;animation:popIn .85s cubic-bezier(.2,.8,.2,1) forwards}
-    @keyframes popIn{
-      0%{transform:translateY(25px) scale(.98);opacity:0}
-      60%{transform:translateY(0) scale(1.02);opacity:1}
-      100%{transform:translateY(0) scale(1);opacity:1}
-    }
-
-    .badge-photo{
-      position:relative;width:100%;aspect-ratio:2/3;
-      background:#111 center/cover no-repeat;
-      border-radius:28px;border:1px solid rgba(255,255,255,.15);overflow:hidden;
-    }
-    .name-box{
-      position:absolute;left:50%;transform:translateX(-50%);bottom:16%;
-      width:80%;background:rgba(0,0,0,.88);color:#fff;text-align:center;
-      padding:12px 10px;border-radius:10px;
-      font-size:clamp(18px,2.6vw,24px);font-weight:800;letter-spacing:.3px;
-      box-shadow:var(--shadow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .token-chip{
-      position:absolute;left:50%;transform:translateX(-50%);bottom:10%;
-      padding:6px 10px;border-radius:999px;font-size:12px;
-      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
-      backdrop-filter:blur(6px);
-    }
-
-    .testbar{position:fixed;right:12px;top:12px;z-index:2;display:flex;gap:8px;align-items:center;
-      padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);
-      border-radius:12px;backdrop-filter:blur(8px);}
-    .testbar input,.testbar button{
-      font-size:14px;padding:10px 12px;border-radius:10px;
-      border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08);outline:none
-    }
-    .testbar input::placeholder{color:#ddd}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Welcome Screen</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+  video.bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+  .badge{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  .badge-photo{width:340px;height:600px;background:#111 center/contain no-repeat;
+               display:flex;align-items:flex-end;justify-content:center;border-radius:16px}
+  .name{margin-bottom:72px;background:rgba(0,0,0,.82);padding:10px 28px;border-radius:10px;
+        font:800 22px/1 system-ui,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.3px}
+  .note{position:fixed;left:10px;bottom:10px;font-size:12px;color:#bbb;opacity:.8}
+  @media (max-width:600px){.badge-photo{width:280px;height:500px}.name{font-size:18px;margin-bottom:52px}}
+</style>
 </head>
 <body>
-  <!-- Background Video + fallback image -->
-  <div class="bg-video">
-    <video id="bgvid" autoplay muted loop playsinline preload="auto"
-           poster="https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true"
-           crossorigin="anonymous">
-      <source src="https://github.com/faridelmekkawy/welcome-screen/raw/refs/heads/main/Welcome%20Video%20(1).mp4" type="video/mp4">
-    </video>
-    <div id="fallback" class="bg-fallback"
-         style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')"></div>
-  </div>
+  <video class="bg" id="bg" autoplay muted loop playsinline preload="auto"></video>
 
-  <!-- Overlay -->
-  <div class="stage">
-    <div class="badge-card show" id="badgeCard"><!-- SHOW by default for testing -->
-      <div class="badge-photo" id="badgePhoto"
-           style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')">
-        <div class="name-box" id="guestName">Guest</div>
-        <div class="token-chip" id="tokenChip" style="display:none"></div>
-      </div>
+  <div class="badge">
+    <div class="badge-photo" id="photo">
+      <div class="name" id="guestName">Guest</div>
     </div>
   </div>
 
-  <!-- Test -->
-  <div class="testbar">
-    <input id="testName" type="text" placeholder="Type a name and hit ‘Show’"/>
-    <button id="testShow">Show</button>
-    <button id="testHide">Hide</button>
-  </div>
+  <div class="note" id="note"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+<script>
+/* ========= CONFIG: candidate URLs (tries in order) ========= */
+const IMG_CANDIDATES = [
+  "/soueast_badge.png",
+  "./soueast_badge.png",
+  "/public/soueast_badge.png",
+  "https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/soueast_badge.png"
+];
 
-    const cardEl  = document.getElementById('badgeCard');
-    const nameEl  = document.getElementById('guestName');
-    const tokenEl = document.getElementById('tokenChip');
-    const bgvid   = document.getElementById('bgvid');
-    const fallback= document.getElementById('fallback');
+const VID_CANDIDATES = [
+  "/Welcome Video.mp4",
+  "/Welcome Video (1).mp4",
+  "./Welcome Video.mp4",
+  "/public/Welcome Video.mp4",
+  "https://raw.githubusercontent.com/faridelmekkawy/welcome-screen/main/Welcome%20Video%20(1).mp4"
+];
 
-    // --- Video diagnostics & fallback ---
-    bgvid.addEventListener('error', () => {
-      console.warn('[video] error loading video — showing fallback image');
-      fallback.style.display = 'block';
-    });
-    bgvid.addEventListener('stalled', () => {
-      console.warn('[video] stalled — showing fallback');
-      fallback.style.display = 'block';
-    });
-    bgvid.addEventListener('playing', () => {
-      fallback.style.display = 'none';
-    });
-    // try to start explicitly (some devices need it even if muted)
-    bgvid.play().catch(e=>console.warn('[video] play blocked:', e));
+/* ========= Helpers ========= */
+const $ = (id)=>document.getElementById(id);
+const note = $('note');
+function say(txt){ note.textContent = txt; }
 
-    // --- Firebase live overlay (works when your scanner writes to /welcome/latest) ---
-    const params = new URLSearchParams(location.search);
-    const EVENT_ID = params.get('event') || 'default';
-    const PATH = `events/${EVENT_ID}/welcome/latest`;
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
-      authDomain: "events-339ce.firebaseapp.com",
-      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "events-339ce",
-      storageBucket: "events-339ce.firebasestorage.app",
-      messagingSenderId: "175601544315",
-      appId: "1:175601544315:web:00c94b4affa972b3a286de"
+function tryImage(urls){
+  return new Promise((resolve,reject)=>{
+    const next = (i)=>{
+      if(i>=urls.length) return reject(new Error("no image found"));
+      const img = new Image();
+      img.onload = ()=>resolve(urls[i]);
+      img.onerror = ()=>next(i+1);
+      img.src = urls[i] + (urls[i].includes("http") ? ("?v="+Date.now()) : "");
     };
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
+    next(0);
+  });
+}
 
-    const looksLikeToken = s => !!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
-
-    async function resolveNameOrFetch(nameFromPing, token){
-      if (nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
-      if (token){
-        try{
-          const snap = await get(ref(db, `events/${EVENT_ID}/guests/${token}`));
-          if (snap.exists()){
-            const g = snap.val() || {};
-            return (g.name?.trim()) || [g.first_name,g.last_name].filter(Boolean).join(' ').trim() || nameFromPing || token;
-          }
-        }catch(e){ console.warn('[firebase] guest lookup failed:', e); }
-      }
-      if (nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
-      return token || 'Guest';
-    }
-
-    function showOverlay({name, token}){
-      nameEl.textContent = name || 'Guest';
-      if (token){ tokenEl.textContent = `Token: ${token}`; tokenEl.style.display = 'inline-flex'; }
-      else tokenEl.style.display = 'none';
-      cardEl.classList.remove('show'); void cardEl.offsetWidth; cardEl.classList.add('show');
-      clearTimeout(window.__hideTimer);
-      window.__hideTimer = setTimeout(()=> cardEl.classList.remove('show'), 10000);
-    }
-
-    onValue(ref(db, PATH), async snap=>{
-      const val = snap.val();
-      if (!val) return;
-      const token = val.token || '';
-      const incomingName = val.name || '';
-      const finalName = await resolveNameOrFetch(incomingName, token);
-      showOverlay({ name: finalName, token });
-    });
-
-    // Test buttons
-    document.getElementById('testShow').onclick = ()=>{
-      const v = document.getElementById('testName').value || 'Guest';
-      showOverlay({ name: v, token:'DEMO' });
+function tryVideo(urls){
+  return new Promise((resolve,reject)=>{
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true;
+    const next = (i)=>{
+      if(i>=urls.length) return reject(new Error("no video found"));
+      v.src = urls[i];
+      let tried = false;
+      const ok = ()=>{ if(!tried){ tried=true; cleanup(); resolve(urls[i]); } };
+      const bad= ()=>{ if(!tried){ tried=true; cleanup(); next(i+1); } };
+      const cleanup = ()=>{
+        v.removeEventListener('canplay', ok);
+        v.removeEventListener('loadeddata', ok);
+        v.removeEventListener('error', bad);
+        v.removeEventListener('stalled', bad);
+      };
+      v.addEventListener('canplay', ok, {once:true});
+      v.addEventListener('loadeddata', ok, {once:true});
+      v.addEventListener('error', bad, {once:true});
+      v.addEventListener('stalled', bad, {once:true});
+      // kick it
+      v.load();
     };
-    document.getElementById('testHide').onclick = ()=> cardEl.classList.remove('show');
+    next(0);
+  });
+}
 
-    // Auto show demo name once so you can SEE it even if Firebase/video fails
-    if (!params.get('nodefault')) {
-      setTimeout(()=> showOverlay({ name: 'Naiera Mostafa', token:'DEMO' }), 600);
+/* ========= Boot ========= */
+(async function boot(){
+  // Set name via URL (?name=Your%20Name)
+  const p = new URLSearchParams(location.search).get("name");
+  if(p) $('guestName').textContent = p;
+
+  // Resolve image
+  say("Loading assets…");
+  try {
+    const img = await tryImage(IMG_CANDIDATES);
+    $('photo').style.backgroundImage = `url('${img}')`;
+  } catch {
+    say("Image not found (still running)");
+  }
+
+  // Resolve video
+  const bg = $('bg');
+  try{
+    const vid = await tryVideo(VID_CANDIDATES);
+    bg.setAttribute('poster', IMG_CANDIDATES[0]); // poster best-effort
+    bg.innerHTML = ""; // clear old sources
+    const src = document.createElement('source');
+    src.src = vid; src.type = "video/mp4";
+    bg.appendChild(src);
+    bg.load();
+    bg.play().catch(()=>{ /* some browsers require user interaction */ });
+    say("");
+  }catch{
+    // No video found: keep static image background
+    if ($('photo').style.backgroundImage) {
+      // leave as is
+      say("Video not found — showing static image");
+    } else {
+      say("Assets missing — check filenames/paths");
     }
-  </script>
+  }
+})();
+</script>
 </body>
 </html>
