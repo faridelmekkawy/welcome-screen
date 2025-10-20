@@ -3,193 +3,100 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Welcome Display — Soueast</title>
-
+  <title>Soueast Welcome — Video + Scan Overlay</title>
   <style>
-    /* ======= PAGE THEME ======= */
-    :root{
-      --bg:#0d1b2a;            /* page background */
-      --ink:#ffffff;
-      --muted:#c8d1db;
-      --shadow: 0 20px 80px rgba(0,0,0,.4);
-    }
+    :root{--shadow:0 20px 80px rgba(0,0,0,.45);}
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial}
-    .wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:4vmin; position:relative; overflow:hidden}
+    html,body{height:100%;margin:0;background:#000;color:#fff;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 
-    /* ======= Optional background video (off by default) ======= */
-    .bg-video{position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none}
-    .bg-video video{width:100%; height:100%; object-fit:cover; filter:brightness(.35)}
+    /* === Fullscreen looping video === */
+    .bg-video{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
+    .bg-video video{width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
 
-    /* ======= BOARD (container) ======= */
-    .board{
-      position:relative; z-index:1; width:min(1400px,94vw);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:var(--shadow); border-radius:32px; padding:5vmin;
-      backdrop-filter: blur(10px);
-      display:flex; align-items:center; justify-content:center;
-      min-height:min(86vh, 900px);
-    }
-    .idle{ opacity:.65 }
+    /* === Center overlay === */
+    .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      padding:4vmin;z-index:1;pointer-events:none}
 
-    /* ======= SOUEAST BADGE ======= */
-    .badge-card{
-      width:min(420px, 86vw);
-      color:#fff;
-      text-align:center;
-      position:relative;
-      filter: drop-shadow(0 22px 50px rgba(0,0,0,.45));
-      transform: translateZ(0);
-    }
-    .badge-top{
-      border-radius: 220px 220px 24px 24px; /* arch top */
-      background: linear-gradient(#e66a12, #4a1d03);
-      padding: 28px 22px 36px;
-      border:1px solid rgba(255,255,255,.14);
-    }
-    /* MANEAST icon + word */
-    .maneast{
-      display:flex; flex-direction:column; align-items:center; gap:8px;
-      margin-bottom: 10px;
-      font-weight:800; letter-spacing:.6px;
-    }
-    .maneast svg{width:48px; height:48px}
-    .maneast .label{font-size:16px}
-
-    /* Club title block */
-    .club{
-      margin-top: 12px;
-      text-transform: uppercase;
-      line-height:1.15;
-      font-weight:800;
-      letter-spacing:.3px;
-      font-size: 15px;
-    }
-    .club .easer{
-      display:block;
-      font-family: ui-rounded, "Comic Sans MS", cursive;
-      font-weight:700;
-      text-transform:none;
-      font-size: 28px;
-      margin: 6px 0 2px;
-    }
-    .divider{
-      height:4px; width:86%; background:#fff; margin:12px auto 0; border-radius:3px;
-      opacity:.9;
+    /* === Soueast badge card === */
+    .badge-card{display:none;width:min(420px,90vw);color:#fff;text-align:center;position:relative;
+      filter:drop-shadow(0 22px 50px rgba(0,0,0,.55));transform:translateZ(0);pointer-events:auto;}
+    .badge-card.show{display:block;animation:popIn .85s cubic-bezier(.2,.8,.2,1) forwards}
+    @keyframes popIn{
+      0%{transform:translateY(25px) scale(.98);opacity:0}
+      60%{transform:translateY(0) scale(1.02);opacity:1}
+      100%{transform:translateY(0) scale(1);opacity:1}
     }
 
-    /* Name plate */
-    .nameplate{
-      margin: 18px auto 8px;
-      width: 86%;
-      background:#000;
-      color:#fff;
-      padding: 14px 12px;
-      border-radius: 8px;
-      font-size: clamp(16px, 2.4vw, 22px);
-      font-weight:700;
-      letter-spacing:.2px;
+    /* === Badge background === */
+    .badge-photo{
+      position:relative;width:100%;aspect-ratio:2/3;
+      background:#111 center/cover no-repeat;
+      border-radius:28px;border:1px solid rgba(255,255,255,.15);overflow:hidden;
     }
 
-    /* Footer block */
-    .badge-bottom{
-      background:#000;
-      border-radius: 20px;
-      margin-top: 10px;
-      padding: 22px 18px 26px;
-      border:1px solid rgba(255,255,255,.12);
-    }
-    .soueast{
-      font-weight:900;
-      letter-spacing: .32rem;
-      font-size: clamp(16px, 3vw, 22px);
-      opacity:.95;
-    }
-    .tagline{
-      margin-top:6px;
-      color:#e6e6e6;
-      font-weight:700;
-      letter-spacing:.06rem;
-      opacity:.9;
+    /* === Name overlay === */
+    .name-box{
+      position:absolute;left:50%;transform:translateX(-50%);bottom:16%;
+      width:80%;background:rgba(0,0,0,.88);color:#fff;text-align:center;
+      padding:12px 10px;border-radius:10px;
+      font-size:clamp(18px,2.6vw,24px);font-weight:800;letter-spacing:.3px;
+      box-shadow:var(--shadow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
 
-    /* Pop-in animation on update */
-    .appear { animation: popIn .85s cubic-bezier(.2,.8,.2,1) forwards }
-    @keyframes popIn {
-      0% { transform: translateY(25px) scale(.98); opacity:0 }
-      60%{ transform: translateY(0) scale(1.02); opacity:1 }
-      100%{ transform: translateY(0) scale(1); opacity:1 }
+    /* === Token (optional small chip) === */
+    .token-chip{
+      position:absolute;left:50%;transform:translateX(-50%);bottom:10%;
+      padding:6px 10px;border-radius:999px;font-size:12px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
+      backdrop-filter:blur(6px);
     }
 
-    /* ======= Top-right test panel (hide in prod) ======= */
-    .testbar{
-      position: fixed; right: 12px; top: 12px; z-index: 2;
-      display:flex; gap:8px; align-items:center; padding:8px;
-      background: rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.2);
-      border-radius:12px; backdrop-filter: blur(8px);
-    }
-    .testbar input, .testbar button{
-      font-size:14px; padding:10px 12px; border-radius:10px;
-      border:1px solid rgba(255,255,255,.25); color:#fff; background:rgba(255,255,255,.08);
-      outline:none
+    /* === Test bar === */
+    .testbar{position:fixed;right:12px;top:12px;z-index:2;display:flex;gap:8px;align-items:center;
+      padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);
+      border-radius:12px;backdrop-filter:blur(8px);}
+    .testbar input,.testbar button{
+      font-size:14px;padding:10px 12px;border-radius:10px;
+      border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08);outline:none
     }
     .testbar input::placeholder{color:#ddd}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- OPTIONAL background video
-    <div class="bg-video">
-      <video src="./background.mp4" autoplay muted loop playsinline></video>
-    </div> -->
+  <!-- === Background Video === -->
+  <div class="bg-video">
+    <video id="bgvid" autoplay muted loop playsinline preload="auto">
+      <source src="https://github.com/faridelmekkawy/welcome-screen/raw/refs/heads/main/Welcome%20Video%20(1).mp4" type="video/mp4">
+    </video>
+  </div>
 
-    <div class="board idle" id="board">
-      <!-- Soueast Badge -->
-      <div class="badge-card" id="badgeCard" aria-live="polite">
-        <div class="badge-top">
-          <div class="maneast">
-            <!-- simple hands + circle mark -->
-            <svg viewBox="0 0 64 64" fill="#fff" aria-hidden="true">
-              <circle cx="32" cy="14" r="8"/>
-              <path d="M14 28c0 8 5 14 18 22 13-8 18-14 18-22 0-4-3-7-7-7h-2c-2 0-4 2-4 4 0 2 1 3 3 4 2 1 3 2 3 4 0 3-4 7-11 11-7-4-11-8-11-11 0-2 1-3 3-4 2-1 3-2 3-4 0-2-2-4-4-4h-2c-4 0-7 3-7 7z"/>
-            </svg>
-            <div class="label">MANEAST</div>
-          </div>
-
-          <div class="club">
-            SOU <span class="easer">Easer</span> Owners Club
-            <div class="divider"></div>
-          </div>
-
-          <div class="nameplate" id="guestName">Guest</div>
-        </div>
-
-        <div class="badge-bottom">
-          <div class="soueast">SOUEAST</div>
-          <div class="tagline">EASE YOUR LIFE</div>
-        </div>
+  <!-- === Overlay Stage === -->
+  <div class="stage">
+    <div class="badge-card" id="badgeCard">
+      <div class="badge-photo" id="badgePhoto"
+           style="background-image:url('https://github.com/faridelmekkawy/welcome-screen/blob/main/soueast_badge.png?raw=true')">
+        <div class="name-box" id="guestName">Guest</div>
+        <div class="token-chip" id="tokenChip" style="display:none"></div>
       </div>
     </div>
   </div>
 
-  <!-- Dev/Test mini panel -->
+  <!-- === Dev/Test Panel (hide in production) === -->
   <div class="testbar" id="testbar">
     <input id="testName" type="text" placeholder="Type a name and hit ‘Show’"/>
     <button id="testShow">Show</button>
-    <button id="testIdle">Idle</button>
+    <button id="testIdle">Hide</button>
   </div>
 
-  <!-- Firebase (module) -->
+  <!-- === Firebase Logic === -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
     import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
 
-    // ======= Config =======
     const params = new URLSearchParams(location.search);
-    const EVENT_ID  = params.get('event') || 'default';
-    const PATH      = `events/${EVENT_ID}/welcome/latest`;
+    const EVENT_ID = params.get('event') || 'default';
+    const PATH = `events/${EVENT_ID}/welcome/latest`;
 
     const firebaseConfig = {
       apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
@@ -202,72 +109,57 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
+    const db = getDatabase(app);
 
-    // ======= UI refs =======
-    const boardEl = document.getElementById('board');
-    const nameEl  = document.getElementById('guestName');
-    const cardEl  = document.getElementById('badgeCard');
+    const cardEl = document.getElementById('badgeCard');
+    const nameEl = document.getElementById('guestName');
+    const tokenEl = document.getElementById('tokenChip');
 
-    // Helpers
-    const looksLikeToken = (s) => !!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
+    const looksLikeToken = (s)=>!!s && /^[A-Z0-9_-]+$/i.test(s) && !/\s/.test(s);
 
     async function resolveNameOrFetch(nameFromPing, token){
-      if (nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
-      if (token){
+      if(nameFromPing && /\s/.test(nameFromPing.trim())) return nameFromPing.trim();
+      if(token){
         try{
-          const snap = await get(ref(db, `events/${EVENT_ID}/guests/${token}`));
-          if (snap.exists()){
-            const g = snap.val() || {};
-            const full =
-              (g.name && g.name.trim()) ||
-              [g.first_name, g.last_name].filter(Boolean).join(' ').trim() ||
-              nameFromPing || token;
+          const snap = await get(ref(db,`events/${EVENT_ID}/guests/${token}`));
+          if(snap.exists()){
+            const g=snap.val()||{};
+            const full=(g.name?.trim())||[g.first_name,g.last_name].filter(Boolean).join(' ').trim()||nameFromPing||token;
             return full;
           }
         }catch(_e){}
       }
-      if (nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
-      return token || 'Guest';
+      if(nameFromPing && !looksLikeToken(nameFromPing)) return nameFromPing;
+      return token||'Guest';
     }
 
-    function setIdle(){
-      nameEl.textContent = 'Guest';
-      boardEl.classList.add('idle');
+    function showOverlay({name,token}){
+      nameEl.textContent=name||'Guest';
+      if(token){tokenEl.textContent=`Token: ${token}`;tokenEl.style.display='inline-flex';}
+      else tokenEl.style.display='none';
+
+      cardEl.classList.remove('show');void cardEl.offsetWidth;cardEl.classList.add('show');
+      clearTimeout(window.__hideTimer);
+      window.__hideTimer=setTimeout(()=>{cardEl.classList.remove('show');},10000);
     }
 
-    function showName(n){
-      nameEl.textContent = n || 'Guest';
-      boardEl.classList.remove('idle');
-      cardEl.classList.remove('appear'); void cardEl.offsetWidth; cardEl.classList.add('appear');
-      clearTimeout(window.__idleTimer);
-      window.__idleTimer = setTimeout(()=>boardEl.classList.add('idle'), 10000);
-    }
-
-    // Initial
-    setIdle();
-
-    // Live subscription from scanner
-    onValue(ref(db, PATH), async (snap)=>{
-      const val = snap.val();
-      if (!val) return;
-      const token = val.token || '';
-      const incomingName = val.name || '';
-      const finalName = await resolveNameOrFetch(incomingName, token);
-      showName(finalName);
+    // Firebase listener for new scans
+    onValue(ref(db,PATH),async(snap)=>{
+      const val=snap.val(); if(!val)return;
+      const token=val.token||''; const incomingName=val.name||'';
+      const finalName=await resolveNameOrFetch(incomingName,token);
+      showOverlay({name:finalName,token});
     });
 
     // Manual test buttons
-    const testName = document.getElementById('testName');
-    document.getElementById('testShow').onclick = ()=>{
-      showName(testName.value || 'Guest');
-      testName.value = '';
+    const testName=document.getElementById('testName');
+    document.getElementById('testShow').onclick=()=>{
+      showOverlay({name:testName.value||'Guest',token:'DEMO'});testName.value='';
     };
-    document.getElementById('testIdle').onclick = setIdle;
+    document.getElementById('testIdle').onclick=()=>cardEl.classList.remove('show');
 
-    // Quick demo via URL: ?demo=Naiera%20Mostafa
-    const demo = params.get('demo');
-    if (demo) showName(demo);
+    const demo=params.get('demo');
+    if(demo)showOverlay({name:demo,token:'DEMO'});
   </script>
 </body>
 </html>
