@@ -10,8 +10,7 @@
       --fade:.35s;
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
-      --img-url: url("/welcome.png"); /* PNG from /public */
-      /* Fine-tune the black bar hitbox if needed */
+      --img-url: url("/welcome.png");
       --box-top: 47%;
       --box-height: 8.5%;
       --box-left: 5%;
@@ -21,12 +20,10 @@
     html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
     .stage{position:fixed;inset:0;overflow:hidden}
 
-    /* Video layer */
     .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
     .video.hidden{opacity:0;pointer-events:none}
     .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 
-    /* Overlay (PNG + name) */
     .overlay{
       position:absolute;inset:0;display:grid;place-items:center;
       background:var(--veil);opacity:0;pointer-events:none;transition:opacity var(--fade) ease;
@@ -35,48 +32,35 @@
 
     .frame{
       width:clamp(260px, 70vmin, 920px);
-      aspect-ratio: 768 / 1365;                 /* match your PNG ratio */
+      aspect-ratio: 768 / 1365;
       background: center/cover no-repeat var(--img-url);
       position: relative;
       border-radius: 22px;
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
-
     .name-box{
-      position:absolute;
-      left: var(--box-left);
-      right: var(--box-right);
-      top: var(--box-top);
-      height: var(--box-height);
-      display:flex;align-items:center;justify-content:center;
-      padding:.3rem .8rem;
+      position:absolute; left:var(--box-left); right:var(--box-right);
+      top:var(--box-top); height:var(--box-height);
+      display:flex;align-items:center;justify-content:center; padding:.3rem .8rem;
     }
     .name{
-      width:100%;
-      text-align:center;
-      font-weight:900;
-      letter-spacing:.03em;
-      text-transform:uppercase;
-      font-size: clamp(18px, 6.2vmin, 64px);
-      color:#fff;
-      text-shadow:0 3px 14px rgba(0,0,0,.55);
+      width:100%; text-align:center; font-weight:900; letter-spacing:.03em; text-transform:uppercase;
+      font-size:clamp(18px,6.2vmin,64px); color:#fff; text-shadow:0 3px 14px rgba(0,0,0,.55);
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.8;color:#0ff}
-    @media (max-width:600px){ .frame{ width:min(90vw, 95vh) } .name{ font-size:clamp(16px,7.5vw,42px) } }
-    @media (min-width:1440px){ .frame{ width:min(48vw, 96vh) } .name{ font-size:clamp(36px,4.8vw,92px) } }
+    @media (max-width:600px){ .frame{ width:min(90vw,95vh) } .name{ font-size:clamp(16px,7.5vw,42px) } }
+    @media (min-width:1440px){ .frame{ width:min(48vw,96vh) } .name{ font-size:clamp(36px,4.8vw,92px) } }
   </style>
 </head>
 <body>
   <div class="stage">
-    <!-- Background video (from /public/welcome.mp4) -->
     <div class="video" id="videoWrap">
       <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="/welcome.png">
         <source src="/welcome.mp4" type="video/mp4"/>
       </video>
     </div>
 
-    <!-- Overlay (PNG + name inside black bar) -->
     <div class="overlay" id="overlay">
       <div class="frame">
         <div class="name-box">
@@ -88,7 +72,7 @@
 
   <div class="status" id="status">state: video • initializing…</div>
 
-  <!-- Bootstrap: start video even if modules fail (no external deps) -->
+  <!-- Bootstrap: start video even if modules fail -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const v = document.getElementById('bgVideo');
@@ -97,26 +81,25 @@
       const start = () => {
         try { v.muted = true; } catch {}
         v.play().then(()=>{ statusEl.textContent = 'state: video • playing'; })
-         .catch(()=> {
-           statusEl.textContent = 'state: video • autoplay blocked, click to start';
-           const kick = () => v.play().catch(()=>{}); document.addEventListener('click', kick, { once:true });
-         });
+          .catch(()=> {
+            statusEl.textContent = 'state: video • autoplay blocked, click to start';
+            const kick = () => v.play().catch(()=>{}); document.addEventListener('click', kick, { once:true });
+          });
       };
       start();
     });
   </script>
 
-  <!-- App logic (Firebase modules from Google CDN) -->
+  <!-- App logic (single module, correct CDN imports) -->
   <script type="module">
-    /*************** CONFIG ***************/
-    const SHOW_MS  = 10_000;  // show name for 10s
+    /******** Firebase (official CDN) ********/
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-database.js";
+
+    /******** Config ********/
+    const SHOW_MS  = 10_000;
     const EVENT_ID = new URLSearchParams(location.search).get('event') || 'default';
     const WATCH_PATH = `events/${EVENT_ID}/welcome/latest/name`;
-
-    /*************** Firebase (official CDN imports) ***************/
-    <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
@@ -131,7 +114,7 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    /*************** Elements ***************/
+    /******** Elements ********/
     const statusEl  = document.getElementById('status');
     const videoWrap = document.getElementById('videoWrap');
     const overlay   = document.getElementById('overlay');
@@ -146,7 +129,6 @@
         showStatus("state: video • autoplay blocked, click to start");
         const kick = () => { bgVideo.play().catch(()=>{}); document.removeEventListener('click', kick); };
         document.addEventListener('click', kick, { once:true });
-        console.warn("Video play() failed:", e);
       }
     }
 
@@ -163,7 +145,7 @@
       showStatus(`state: ${mode} • ${msg}`);
     }
 
-    /*************** Queue (show scans one-by-one) ***************/
+    /******** Queue (show scans one-by-one) ********/
     const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
     function enqueue(name){
       if(!name) return;
@@ -195,7 +177,7 @@
       }, SHOW_MS);
     }
 
-    /*************** Firebase listener ***************/
+    /******** Firebase listener ********/
     onValue(ref(db, WATCH_PATH), (snap)=>{
       const name = (snap.val() ?? "").toString().trim();
       if (name) enqueue(name);
@@ -204,7 +186,6 @@
       showStatus(`state: video • error: ${err?.message||err}`);
     });
 
-    // Kick video once more from module context
     ensureVideoPlaying();
     showStatus("state: video • listening…");
   </script>
