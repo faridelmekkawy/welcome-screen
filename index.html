@@ -9,11 +9,7 @@
     --fade:.35s;
     --ink:#fff;
     --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
-
-    /* Use your PNG from /public */
     --img-url: url("/welcome.png");
-
-    /* Tweak if needed to perfectly align the black bar */
     --box-top: 47%;
     --box-height: 8.5%;
     --box-left: 5%;
@@ -23,19 +19,18 @@
   html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
   .stage{position:fixed;inset:0;overflow:hidden}
 
-  /* Video layer */
+  /* ===== Video layer ===== */
   .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
   .video.hidden{opacity:0;pointer-events:none}
-  .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
 
-  /* Overlay with PNG + name */
+  /* ===== Overlay (PNG + name) ===== */
   .overlay{
     position:absolute;inset:0;display:grid;place-items:center;
     background:var(--veil);opacity:0;pointer-events:none;transition:opacity var(--fade) ease;
   }
   .overlay.visible{opacity:1;pointer-events:auto}
 
-  /* Frame uses your PNG; aspect ratio matches your portrait image (768x1365) */
   .frame{
     width:clamp(260px, 70vmin, 920px);
     aspect-ratio: 768 / 1365;
@@ -45,7 +40,6 @@
     box-shadow: 0 24px 96px rgba(0,0,0,.55);
   }
 
-  /* Name sits over the black bar */
   .name-box{
     position:absolute;
     left: var(--box-left);
@@ -67,9 +61,8 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
 
-  .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.7}
+  .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.7;color:#0ff;}
 
-  /* Phone / LED wall tweaks */
   @media (max-width:600px){
     .frame{ width:min(90vw, 95vh); }
     .name{ font-size: clamp(16px, 7.5vw, 42px); }
@@ -82,14 +75,12 @@
 </head>
 <body>
 <div class="stage">
-  <!-- Background video (from /public/welcome.mp4) -->
   <div class="video" id="videoWrap">
-    <video id="bgVideo" autoplay muted loop playsinline preload="auto">
+    <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="/welcome.png">
       <source src="/welcome.mp4" type="video/mp4"/>
     </video>
   </div>
 
-  <!-- Overlay (PNG + name in the black box) -->
   <div class="overlay" id="overlay">
     <div class="frame">
       <div class="name-box">
@@ -99,15 +90,15 @@
   </div>
 </div>
 
-<div class="status" id="status">state: video • listening…</div>
+<div class="status" id="status">state: video • initializing…</div>
 
 <script type="module">
   /*************** CONFIG ***************/
-  const SHOW_MS  = 10_000;  // 10 seconds per name
+  const SHOW_MS  = 10_000;
   const EVENT_ID = new URLSearchParams(location.search).get('event') || 'default';
   const WATCH_PATH = `events/${EVENT_ID}/welcome/latest/name`;
 
-  /*************** Firebase (your creds) ***************/
+  /*************** Firebase ***************/
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-app.js";
   import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-database.js";
 
@@ -131,58 +122,75 @@
   const nameEl    = document.getElementById('nameEl');
   const bgVideo   = document.getElementById('bgVideo');
 
-  function setState(mode,msg=""){
-    if(mode==="image"){ videoWrap.classList.add("hidden"); overlay.classList.add("visible"); try{bgVideo.pause();}catch{} }
-    else { overlay.classList.remove("visible"); videoWrap.classList.remove("hidden"); try{bgVideo.play().catch(()=>{});}catch{} }
-    statusEl.textContent = `state: ${mode} • ${msg}`;
-  }
+  function showStatus(msg){ statusEl.textContent = msg; }
 
-  /*************** Queue (show one-by-one) ***************/
-  const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
-
-  function enqueue(name){
-    if(!name) return;
-    const n = name.trim();
-    if(!n || n===lastShown || inQueue.has(n) || (queue.length && queue[queue.length-1]===n)) return;
-    inQueue.add(n); queue.push(n); processQueue();
-  }
-  function processQueue(){ if(showing) return; const next=queue.shift(); if(!next) return; inQueue.delete(next); showName(next); }
-
-  // Auto-fit font so long names stay inside the black bar
-  function fitText(el){
-    el.style.fontSize = ""; // reset to CSS size
-    const parent = el.parentElement;
-    let size = parseFloat(getComputedStyle(el).fontSize);
-    while ((el.scrollWidth > parent.clientWidth || el.scrollHeight > parent.clientHeight) && size > 12){
-      size -= 1; el.style.fontSize = size + "px";
+  async function ensureVideoPlaying() {
+    try {
+      bgVideo.muted = true;
+      await bgVideo.play();
+      showStatus("state: video • playing");
+    } catch (e) {
+      showStatus("state: video • autoplay blocked, click to start");
+      const kick = () => { bgVideo.play().catch(()=>{}); document.removeEventListener('click', kick); };
+      document.addEventListener('click', kick, { once:true });
+      console.warn("Video play() failed:", e);
     }
   }
 
-  function showName(name){
-    showing = true;
-    nameEl.textContent = name.toUpperCase();
-    requestAnimationFrame(()=>{ fitText(nameEl); });
-
-    setState("image", `showing "${name}" for ${SHOW_MS/1000}s`);
-    clearTimeout(timer);
-    timer = setTimeout(()=>{
-      lastShown = name;
-      setState("video","auto-revert");
-      showing = false;
-      processQueue();
-    }, SHOW_MS);
+  function setState(mode,msg=""){
+    if(mode==="image"){
+      videoWrap.classList.add("hidden");
+      overlay.classList.add("visible");
+      try{bgVideo.pause();}catch{}
+    } else {
+      overlay.classList.remove("visible");
+      videoWrap.classList.remove("hidden");
+      ensureVideoPlaying();
+    }
+    showStatus(`state: ${mode} • ${msg}`);
   }
 
-  /*************** DB listener ***************/
+  /*************** Queue (names) ***************/
+  const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
+  function enqueue(name){
+    if(!name) return;
+    const n=name.trim();
+    if(!n||n===lastShown||inQueue.has(n)||(queue.length&&queue[queue.length-1]===n))return;
+    inQueue.add(n); queue.push(n); processQueue();
+  }
+  function processQueue(){ if(showing) return; const next=queue.shift(); if(!next)return; inQueue.delete(next); showName(next); }
+
+  function fitText(el){
+    el.style.fontSize="";
+    const parent=el.parentElement; let size=parseFloat(getComputedStyle(el).fontSize);
+    while((el.scrollWidth>parent.clientWidth||el.scrollHeight>parent.clientHeight)&&size>12){ size-=1; el.style.fontSize=size+"px"; }
+  }
+
+  function showName(name){
+    showing=true;
+    nameEl.textContent=name.toUpperCase();
+    requestAnimationFrame(()=>{fitText(nameEl);});
+    setState("image",`showing "${name}"`);
+    clearTimeout(timer);
+    timer=setTimeout(()=>{
+      lastShown=name;
+      setState("video","auto-revert");
+      showing=false;
+      processQueue();
+    },SHOW_MS);
+  }
+
+  /*************** Firebase listener ***************/
   onValue(ref(db, WATCH_PATH), (snap)=>{
-    const name = (snap.val() ?? "").toString().trim();
-    if (name) enqueue(name);
-    else if (!overlay.classList.contains("visible")) setState("video","waiting…");
-  }, err => {
-    statusEl.textContent = `state: video • error: ${err?.message||err}`;
+    const name=(snap.val()??"").toString().trim();
+    if(name)enqueue(name);
+    else if(!overlay.classList.contains("visible"))setState("video","waiting…");
+  },err=>{
+    showStatus(`state: video • error: ${err?.message||err}`);
   });
 
-  setState("video","listening…");
+  ensureVideoPlaying();
+  showStatus("state: video • listening…");
 </script>
 </body>
 </html>
