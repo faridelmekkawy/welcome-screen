@@ -1,95 +1,188 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Welcome Screen</title>
-  <style>
-    html,body{
-      margin:0;
-      height:100%;
-      background:#000;
-      color:#fff;
-      font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
-      overflow:hidden;
-    }
-    video.bg{
-      position:fixed;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      z-index:-2;
-    }
-    .badge{
-      position:fixed;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .badge-photo{
-      width:340px;
-      height:600px;
-      background:#111 center/contain no-repeat;
-      display:flex;
-      align-items:flex-end;
-      justify-content:center;
-      border-radius:16px;
-    }
-    .name{
-      margin-bottom:72px;
-      background:rgba(0,0,0,.82);
-      padding:10px 28px;
-      border-radius:10px;
-      font:800 22px/1 system-ui,Segoe UI,Roboto,Arial,sans-serif;
-      letter-spacing:.3px;
-    }
-    .note{
-      position:fixed;
-      left:10px;
-      bottom:10px;
-      font-size:12px;
-      color:#bbb;
-      opacity:.8;
-    }
-    @media (max-width:600px){
-      .badge-photo{width:280px;height:500px}
-      .name{font-size:18px;margin-bottom:52px}
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Welcome Display — Soueast</title>
+<style>
+  :root{
+    --fade:.35s;
+    --ink:#fff;
+    --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
+
+    /* Use your PNG from /public */
+    --img-url: url("/welcome.png");
+
+    /* Tweak if needed to perfectly align the black bar */
+    --box-top: 47%;
+    --box-height: 8.5%;
+    --box-left: 5%;
+    --box-right: 5%;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .stage{position:fixed;inset:0;overflow:hidden}
+
+  /* Video layer */
+  .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
+  .video.hidden{opacity:0;pointer-events:none}
+  .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+  /* Overlay with PNG + name */
+  .overlay{
+    position:absolute;inset:0;display:grid;place-items:center;
+    background:var(--veil);opacity:0;pointer-events:none;transition:opacity var(--fade) ease;
+  }
+  .overlay.visible{opacity:1;pointer-events:auto}
+
+  /* Frame uses your PNG; aspect ratio matches your portrait image (768x1365) */
+  .frame{
+    width:clamp(260px, 70vmin, 920px);
+    aspect-ratio: 768 / 1365;
+    background: center/cover no-repeat var(--img-url);
+    position: relative;
+    border-radius: 22px;
+    box-shadow: 0 24px 96px rgba(0,0,0,.55);
+  }
+
+  /* Name sits over the black bar */
+  .name-box{
+    position:absolute;
+    left: var(--box-left);
+    right: var(--box-right);
+    top: var(--box-top);
+    height: var(--box-height);
+    display:flex;align-items:center;justify-content:center;
+    padding:.3rem .8rem;
+  }
+  .name{
+    width:100%;
+    text-align:center;
+    font-weight:900;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    font-size: clamp(18px, 6.2vmin, 64px);
+    color:#fff;
+    text-shadow:0 3px 14px rgba(0,0,0,.55);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.7}
+
+  /* Phone / LED wall tweaks */
+  @media (max-width:600px){
+    .frame{ width:min(90vw, 95vh); }
+    .name{ font-size: clamp(16px, 7.5vw, 42px); }
+  }
+  @media (min-width:1440px){
+    .frame{ width:min(48vw, 96vh); }
+    .name{ font-size: clamp(36px, 4.8vw, 92px); }
+  }
+</style>
 </head>
 <body>
-  <!-- Background video -->
-  <video class="bg" id="bg" autoplay muted loop playsinline preload="auto">
-    <source src="./public/welcome.mp4" type="video/mp4"/>
-  </video>
-
-  <!-- Badge overlay -->
-  <div class="badge">
-    <div class="badge-photo" id="photo" style="background-image:url('./public/badge.png')">
-      <div class="name" id="guestName">Guest</div>
-    </div>
+<div class="stage">
+  <!-- Background video (from /public/welcome.mp4) -->
+  <div class="video" id="videoWrap">
+    <video id="bgVideo" autoplay muted loop playsinline preload="auto">
+      <source src="/welcome.mp4" type="video/mp4"/>
+    </video>
   </div>
 
-  <!-- Footer note -->
-  <div class="note" id="note"></div>
+  <!-- Overlay (PNG + name in the black box) -->
+  <div class="overlay" id="overlay">
+    <div class="frame">
+      <div class="name-box">
+        <div class="name" id="nameEl">GUEST NAME</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <script>
-    // Update guest name from ?name= query parameter
-    const p = new URLSearchParams(location.search).get("name");
-    if (p) document.getElementById("guestName").textContent = p;
+<div class="status" id="status">state: video • listening…</div>
 
-    // Handle video autoplay / error fallback
-    const bg = document.getElementById("bg");
-    const note = document.getElementById("note");
-    bg.addEventListener("error", () => {
-      note.textContent = "Video not found or blocked — showing static image.";
-    });
-    bg.play().catch(() => {
-      note.textContent = "Autoplay blocked — tap to play.";
-      document.body.addEventListener("click", () => bg.play(), { once:true });
-    });
-  </script>
+<script type="module">
+  /*************** CONFIG ***************/
+  const SHOW_MS  = 10_000;  // 10 seconds per name
+  const EVENT_ID = new URLSearchParams(location.search).get('event') || 'default';
+  const WATCH_PATH = `events/${EVENT_ID}/welcome/latest/name`;
+
+  /*************** Firebase (your creds) ***************/
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
+    authDomain: "events-339ce.firebaseapp.com",
+    databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "events-339ce",
+    storageBucket: "events-339ce.appspot.com",
+    messagingSenderId: "175601544315",
+    appId: "1:175601544315:web:00c94b4affa972b3a286de"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  /*************** Elements ***************/
+  const statusEl  = document.getElementById('status');
+  const videoWrap = document.getElementById('videoWrap');
+  const overlay   = document.getElementById('overlay');
+  const nameEl    = document.getElementById('nameEl');
+  const bgVideo   = document.getElementById('bgVideo');
+
+  function setState(mode,msg=""){
+    if(mode==="image"){ videoWrap.classList.add("hidden"); overlay.classList.add("visible"); try{bgVideo.pause();}catch{} }
+    else { overlay.classList.remove("visible"); videoWrap.classList.remove("hidden"); try{bgVideo.play().catch(()=>{});}catch{} }
+    statusEl.textContent = `state: ${mode} • ${msg}`;
+  }
+
+  /*************** Queue (show one-by-one) ***************/
+  const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
+
+  function enqueue(name){
+    if(!name) return;
+    const n = name.trim();
+    if(!n || n===lastShown || inQueue.has(n) || (queue.length && queue[queue.length-1]===n)) return;
+    inQueue.add(n); queue.push(n); processQueue();
+  }
+  function processQueue(){ if(showing) return; const next=queue.shift(); if(!next) return; inQueue.delete(next); showName(next); }
+
+  // Auto-fit font so long names stay inside the black bar
+  function fitText(el){
+    el.style.fontSize = ""; // reset to CSS size
+    const parent = el.parentElement;
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while ((el.scrollWidth > parent.clientWidth || el.scrollHeight > parent.clientHeight) && size > 12){
+      size -= 1; el.style.fontSize = size + "px";
+    }
+  }
+
+  function showName(name){
+    showing = true;
+    nameEl.textContent = name.toUpperCase();
+    requestAnimationFrame(()=>{ fitText(nameEl); });
+
+    setState("image", `showing "${name}" for ${SHOW_MS/1000}s`);
+    clearTimeout(timer);
+    timer = setTimeout(()=>{
+      lastShown = name;
+      setState("video","auto-revert");
+      showing = false;
+      processQueue();
+    }, SHOW_MS);
+  }
+
+  /*************** DB listener ***************/
+  onValue(ref(db, WATCH_PATH), (snap)=>{
+    const name = (snap.val() ?? "").toString().trim();
+    if (name) enqueue(name);
+    else if (!overlay.classList.contains("visible")) setState("video","waiting…");
+  }, err => {
+    statusEl.textContent = `state: video • error: ${err?.message||err}`;
+  });
+
+  setState("video","listening…");
+</script>
 </body>
 </html>
