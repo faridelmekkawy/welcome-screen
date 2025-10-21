@@ -1,197 +1,211 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="icon" href="/welcome.png">
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Welcome Display — Soueast</title>
-<style>
-  :root{
-    --fade:.35s;
-    --ink:#fff;
-    --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
-    --img-url: url("/welcome.png");
-    --box-top: 47%;
-    --box-height: 8.5%;
-    --box-left: 5%;
-    --box-right: 5%;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  .stage{position:fixed;inset:0;overflow:hidden}
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Welcome Display — Soueast</title>
+  <link rel="icon" href="/welcome.png"/>
+  <style>
+    :root{
+      --fade:.35s;
+      --ink:#fff;
+      --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
+      --img-url: url("/welcome.png"); /* PNG from /public */
+      /* Fine-tune the black bar hitbox if needed */
+      --box-top: 47%;
+      --box-height: 8.5%;
+      --box-left: 5%;
+      --box-right: 5%;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .stage{position:fixed;inset:0;overflow:hidden}
 
-  /* ===== Video layer ===== */
-  .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
-  .video.hidden{opacity:0;pointer-events:none}
-  .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
+    /* Video layer */
+    .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
+    .video.hidden{opacity:0;pointer-events:none}
+    .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 
-  /* ===== Overlay (PNG + name) ===== */
-  .overlay{
-    position:absolute;inset:0;display:grid;place-items:center;
-    background:var(--veil);opacity:0;pointer-events:none;transition:opacity var(--fade) ease;
-  }
-  .overlay.visible{opacity:1;pointer-events:auto}
+    /* Overlay (PNG + name) */
+    .overlay{
+      position:absolute;inset:0;display:grid;place-items:center;
+      background:var(--veil);opacity:0;pointer-events:none;transition:opacity var(--fade) ease;
+    }
+    .overlay.visible{opacity:1;pointer-events:auto}
 
-  .frame{
-    width:clamp(260px, 70vmin, 920px);
-    aspect-ratio: 768 / 1365;
-    background: center/cover no-repeat var(--img-url);
-    position: relative;
-    border-radius: 22px;
-    box-shadow: 0 24px 96px rgba(0,0,0,.55);
-  }
+    .frame{
+      width:clamp(260px, 70vmin, 920px);
+      aspect-ratio: 768 / 1365;                 /* match your PNG ratio */
+      background: center/cover no-repeat var(--img-url);
+      position: relative;
+      border-radius: 22px;
+      box-shadow: 0 24px 96px rgba(0,0,0,.55);
+    }
 
-  .name-box{
-    position:absolute;
-    left: var(--box-left);
-    right: var(--box-right);
-    top: var(--box-top);
-    height: var(--box-height);
-    display:flex;align-items:center;justify-content:center;
-    padding:.3rem .8rem;
-  }
-  .name{
-    width:100%;
-    text-align:center;
-    font-weight:900;
-    letter-spacing:.03em;
-    text-transform:uppercase;
-    font-size: clamp(18px, 6.2vmin, 64px);
-    color:#fff;
-    text-shadow:0 3px 14px rgba(0,0,0,.55);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-
-  .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.7;color:#0ff;}
-
-  @media (max-width:600px){
-    .frame{ width:min(90vw, 95vh); }
-    .name{ font-size: clamp(16px, 7.5vw, 42px); }
-  }
-  @media (min-width:1440px){
-    .frame{ width:min(48vw, 96vh); }
-    .name{ font-size: clamp(36px, 4.8vw, 92px); }
-  }
-</style>
+    .name-box{
+      position:absolute;
+      left: var(--box-left);
+      right: var(--box-right);
+      top: var(--box-top);
+      height: var(--box-height);
+      display:flex;align-items:center;justify-content:center;
+      padding:.3rem .8rem;
+    }
+    .name{
+      width:100%;
+      text-align:center;
+      font-weight:900;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      font-size: clamp(18px, 6.2vmin, 64px);
+      color:#fff;
+      text-shadow:0 3px 14px rgba(0,0,0,.55);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.8;color:#0ff}
+    @media (max-width:600px){ .frame{ width:min(90vw, 95vh) } .name{ font-size:clamp(16px,7.5vw,42px) } }
+    @media (min-width:1440px){ .frame{ width:min(48vw, 96vh) } .name{ font-size:clamp(36px,4.8vw,92px) } }
+  </style>
 </head>
 <body>
-<div class="stage">
-  <div class="video" id="videoWrap">
-    <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="/welcome.png">
-      <source src="/welcome.mp4" type="video/mp4"/>
-    </video>
-  </div>
+  <div class="stage">
+    <!-- Background video (from /public/welcome.mp4) -->
+    <div class="video" id="videoWrap">
+      <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="/welcome.png">
+        <source src="/welcome.mp4" type="video/mp4"/>
+      </video>
+    </div>
 
-  <div class="overlay" id="overlay">
-    <div class="frame">
-      <div class="name-box">
-        <div class="name" id="nameEl">GUEST NAME</div>
+    <!-- Overlay (PNG + name inside black bar) -->
+    <div class="overlay" id="overlay">
+      <div class="frame">
+        <div class="name-box">
+          <div class="name" id="nameEl">GUEST NAME</div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="status" id="status">state: video • initializing…</div>
+  <div class="status" id="status">state: video • initializing…</div>
 
-<script type="module">
-  /*************** CONFIG ***************/
-  const SHOW_MS  = 10_000;
-  const EVENT_ID = new URLSearchParams(location.search).get('event') || 'default';
-  const WATCH_PATH = `events/${EVENT_ID}/welcome/latest/name`;
+  <!-- Bootstrap: start video even if modules fail (no external deps) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const v = document.getElementById('bgVideo');
+      const statusEl = document.getElementById('status');
+      if (!v) return;
+      const start = () => {
+        try { v.muted = true; } catch {}
+        v.play().then(()=>{ statusEl.textContent = 'state: video • playing'; })
+         .catch(()=> {
+           statusEl.textContent = 'state: video • autoplay blocked, click to start';
+           const kick = () => v.play().catch(()=>{}); document.addEventListener('click', kick, { once:true });
+         });
+      };
+      start();
+    });
+  </script>
 
-  /*************** Firebase ***************/
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-database.js";
+  <!-- App logic (Firebase modules from Google CDN) -->
+  <script type="module">
+    /*************** CONFIG ***************/
+    const SHOW_MS  = 10_000;  // show name for 10s
+    const EVENT_ID = new URLSearchParams(location.search).get('event') || 'default';
+    const WATCH_PATH = `events/${EVENT_ID}/welcome/latest/name`;
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
-    authDomain: "events-339ce.firebaseapp.com",
-    databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "events-339ce",
-    storageBucket: "events-339ce.appspot.com",
-    messagingSenderId: "175601544315",
-    appId: "1:175601544315:web:00c94b4affa972b3a286de"
-  };
+    /*************** Firebase (official CDN imports) ***************/
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-database.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
+      authDomain: "events-339ce.firebaseapp.com",
+      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "events-339ce",
+      storageBucket: "events-339ce.appspot.com",
+      messagingSenderId: "175601544315",
+      appId: "1:175601544315:web:00c94b4affa972b3a286de"
+    };
 
-  /*************** Elements ***************/
-  const statusEl  = document.getElementById('status');
-  const videoWrap = document.getElementById('videoWrap');
-  const overlay   = document.getElementById('overlay');
-  const nameEl    = document.getElementById('nameEl');
-  const bgVideo   = document.getElementById('bgVideo');
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
 
-  function showStatus(msg){ statusEl.textContent = msg; }
+    /*************** Elements ***************/
+    const statusEl  = document.getElementById('status');
+    const videoWrap = document.getElementById('videoWrap');
+    const overlay   = document.getElementById('overlay');
+    const nameEl    = document.getElementById('nameEl');
+    const bgVideo   = document.getElementById('bgVideo');
 
-  async function ensureVideoPlaying() {
-    try {
-      bgVideo.muted = true;
-      await bgVideo.play();
-      showStatus("state: video • playing");
-    } catch (e) {
-      showStatus("state: video • autoplay blocked, click to start");
-      const kick = () => { bgVideo.play().catch(()=>{}); document.removeEventListener('click', kick); };
-      document.addEventListener('click', kick, { once:true });
-      console.warn("Video play() failed:", e);
+    const showStatus = (msg)=> statusEl.textContent = msg;
+
+    async function ensureVideoPlaying() {
+      try { bgVideo.muted = true; await bgVideo.play(); showStatus("state: video • playing"); }
+      catch (e) {
+        showStatus("state: video • autoplay blocked, click to start");
+        const kick = () => { bgVideo.play().catch(()=>{}); document.removeEventListener('click', kick); };
+        document.addEventListener('click', kick, { once:true });
+        console.warn("Video play() failed:", e);
+      }
     }
-  }
 
-  function setState(mode,msg=""){
-    if(mode==="image"){
-      videoWrap.classList.add("hidden");
-      overlay.classList.add("visible");
-      try{bgVideo.pause();}catch{}
-    } else {
-      overlay.classList.remove("visible");
-      videoWrap.classList.remove("hidden");
-      ensureVideoPlaying();
+    function setState(mode,msg=""){
+      if(mode==="image"){
+        videoWrap.classList.add("hidden");
+        overlay.classList.add("visible");
+        try{bgVideo.pause();}catch{}
+      } else {
+        overlay.classList.remove("visible");
+        videoWrap.classList.remove("hidden");
+        ensureVideoPlaying();
+      }
+      showStatus(`state: ${mode} • ${msg}`);
     }
-    showStatus(`state: ${mode} • ${msg}`);
-  }
 
-  /*************** Queue (names) ***************/
-  const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
-  function enqueue(name){
-    if(!name) return;
-    const n=name.trim();
-    if(!n||n===lastShown||inQueue.has(n)||(queue.length&&queue[queue.length-1]===n))return;
-    inQueue.add(n); queue.push(n); processQueue();
-  }
-  function processQueue(){ if(showing) return; const next=queue.shift(); if(!next)return; inQueue.delete(next); showName(next); }
+    /*************** Queue (show scans one-by-one) ***************/
+    const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
+    function enqueue(name){
+      if(!name) return;
+      const n=name.trim();
+      if(!n||n===lastShown||inQueue.has(n)||(queue.length&&queue[queue.length-1]===n))return;
+      inQueue.add(n); queue.push(n); processQueue();
+    }
+    function processQueue(){ if(showing) return; const next=queue.shift(); if(!next) return; inQueue.delete(next); showName(next); }
 
-  function fitText(el){
-    el.style.fontSize="";
-    const parent=el.parentElement; let size=parseFloat(getComputedStyle(el).fontSize);
-    while((el.scrollWidth>parent.clientWidth||el.scrollHeight>parent.clientHeight)&&size>12){ size-=1; el.style.fontSize=size+"px"; }
-  }
+    function fitText(el){
+      el.style.fontSize="";
+      const parent=el.parentElement; let size=parseFloat(getComputedStyle(el).fontSize);
+      while((el.scrollWidth>parent.clientWidth||el.scrollHeight>parent.clientHeight)&&size>12){
+        size-=1; el.style.fontSize=size+"px";
+      }
+    }
 
-  function showName(name){
-    showing=true;
-    nameEl.textContent=name.toUpperCase();
-    requestAnimationFrame(()=>{fitText(nameEl);});
-    setState("image",`showing "${name}"`);
-    clearTimeout(timer);
-    timer=setTimeout(()=>{
-      lastShown=name;
-      setState("video","auto-revert");
-      showing=false;
-      processQueue();
-    },SHOW_MS);
-  }
+    function showName(name){
+      showing=true;
+      nameEl.textContent = name.toUpperCase();
+      requestAnimationFrame(()=>{ fitText(nameEl); });
+      setState("image", `showing "${name}"`);
+      clearTimeout(timer);
+      timer = setTimeout(()=>{
+        lastShown = name;
+        setState("video", "auto-revert");
+        showing = false;
+        processQueue();
+      }, SHOW_MS);
+    }
 
-  /*************** Firebase listener ***************/
-  onValue(ref(db, WATCH_PATH), (snap)=>{
-    const name=(snap.val()??"").toString().trim();
-    if(name)enqueue(name);
-    else if(!overlay.classList.contains("visible"))setState("video","waiting…");
-  },err=>{
-    showStatus(`state: video • error: ${err?.message||err}`);
-  });
+    /*************** Firebase listener ***************/
+    onValue(ref(db, WATCH_PATH), (snap)=>{
+      const name = (snap.val() ?? "").toString().trim();
+      if (name) enqueue(name);
+      else if (!overlay.classList.contains("visible")) setState("video","waiting…");
+    }, err => {
+      showStatus(`state: video • error: ${err?.message||err}`);
+    });
 
-  ensureVideoPlaying();
-  showStatus("state: video • listening…");
-</script>
+    // Kick video once more from module context
+    ensureVideoPlaying();
+    showStatus("state: video • listening…");
+  </script>
 </body>
 </html>
