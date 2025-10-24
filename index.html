@@ -192,21 +192,7 @@
       if (name !== lastName) showName(name);
     }, err => { console.warn("[DB] error", err); showStatus("state: video • db error"); });
 
-    /* ===== Poll fallback (re-show same name if rescanned) =====
-       If your scanner writes the same string again, RTDB won't emit.
-       This forces a re-show if the same name is set again after a few seconds.
-    */
-    setInterval(()=>{
-      refName.get().then(snap=>{
-        const name = (snap.val() ?? "").toString().trim();
-        if (!name) return;
-        const now = Date.now();
-        if (name === lastName && now - lastShownAt > 3000 && !showing){
-          showName(name);
-        }
-      }).catch(()=>{});
-    }, 1500);
-
+    
     /* Start */
     setState("video","listening…");
 
