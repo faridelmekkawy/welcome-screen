@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <title>Welcome Display — Soueast</title>
 
-  <!-- Display font -->
+  <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png"/>
@@ -17,13 +17,13 @@
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png");
 
-      /* Black bar “hitbox” on your PNG (percent of card) */
-      --box-top: 50.5%;
-      --box-height: 10.2%;
+      /* Black-bar hitbox (tuned for single-line name) */
+      --box-top: 50.3%;
+      --box-height: 9.4%;
       --box-left: 6%;
       --box-right: 6%;
 
-      /* Gold */
+      /* Gold tones */
       --gold1:#e7c072; --gold2:#f6e6b8; --gold3:#b88a3d;
     }
 
@@ -64,7 +64,7 @@
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Card (your PNG) */
+    /* Card (PNG) */
     .frame{
       width:clamp(280px, 70vmin, 980px);
       aspect-ratio:768/1365;
@@ -73,7 +73,7 @@
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
 
-    /* Name bar hitbox */
+    /* Black-bar hitbox */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
@@ -83,20 +83,23 @@
     }
     /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
-    /* Full name, up to 2 lines, JS auto-shrinks to fit width+height */
+    /* SINGLE-LINE name, auto-shrinks to fit width */
     .name{
-      width:100%; text-align:center; font-weight:900; letter-spacing:.01em; text-transform:uppercase;
-      color:#fff; text-shadow:0 3px 14px rgba(0,0,0,.55);
-      white-space:normal; overflow:hidden; display:block; line-height:1.05;
-      font-size:clamp(20px, 7.2vmin, 86px);
-      word-break:break-word;
+      width:100%; text-align:center; font-weight:900; text-transform:uppercase;
+      color:#fff; text-shadow:0 3px 12px rgba(0,0,0,.55);
+
+      white-space:nowrap; overflow:hidden;
+      line-height:1.0;                     /* optically centered in bar */
+      letter-spacing:.01em;                /* JS tightens as needed */
+      font-size:clamp(22px, 6.5vmin, 72px);
+      transform:translateY(1px);           /* tiny optical center */
     }
 
     /* Luxe reveal */
     @keyframes namePop {
-      0%   { transform: translateY(6px) scale(.96); letter-spacing:.08em; opacity:0 }
-      60%  { transform: translateY(0) scale(1.02); letter-spacing:.015em; opacity:1 }
-      100% { transform: translateY(0) scale(1); letter-spacing:.01em; }
+      0%   { transform: translateY(7px) scale(.96); letter-spacing:.08em; opacity:0 }
+      60%  { transform: translateY(1px) scale(1.02); letter-spacing:.015em; opacity:1 }
+      100% { transform: translateY(1px) scale(1); letter-spacing:.01em; }
     }
     .name.sheen{
       position:relative; isolation:isolate;
@@ -114,8 +117,8 @@
     @keyframes sweep { to { transform: skewX(-18deg) translateX(140%); opacity:0 } }
 
     .name-underline{
-      position:absolute; left:15%; right:15%;
-      bottom:calc((100% - var(--box-height)) * -0.15);
+      position:absolute; left:18%; right:18%;
+      bottom:calc((100% - var(--box-height)) * -0.18);
       height:3px; border-radius:999px;
       background: linear-gradient(90deg, transparent, var(--gold2), transparent);
       transform-origin:center; transform:scaleX(0);
@@ -125,13 +128,13 @@
 
     .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
 
-    /* Phone portrait: tiny nudge */
+    /* Phone portrait: nudge */
     @media (max-width:600px) and (max-aspect-ratio:9/16){
-      :root{ --box-top: 51.2%; --box-height: 10.8% }
+      :root{ --box-top: 51.0%; --box-height: 10.0% }
     }
     /* Wide laptops */
     @media (min-aspect-ratio:16/9){
-      :root{ --box-top: 49.7%; --box-height: 9.6% }
+      :root{ --box-top: 49.9%; --box-height: 9.2% }
     }
   </style>
 </head>
@@ -145,7 +148,7 @@
       </video>
     </div>
 
-    <!-- Overlay -->
+    <!-- Overlay (card + single-line name) -->
     <div class="overlay" id="overlay">
       <div class="frame">
         <div class="name-box">
@@ -158,18 +161,13 @@
 
   <div class="status" id="status">state: video • initializing…</div>
 
-  <!-- (Optional) soft chime -->
-  <!-- <audio id="chime" preload="auto">
-    <source src="https://cdn.jsdelivr.net/gh/naptha/tiny-sfx@master/tones/confirm.mp3" type="audio/mpeg"/>
-  </audio> -->
-
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database-compat.js"></script>
 
   <script>
     /* ===== Config ===== */
-    const SHOW_MS = 5000;                 // <— 5 seconds
+    const SHOW_MS = 5000;                 // 5 seconds
     const EVENT_ID = "Soueast";
     const WATCH_NAME = `events/${EVENT_ID}/welcome/latest/name`;
 
@@ -206,24 +204,22 @@
       showStatus(`state: ${mode} • ${msg}`);
     }
 
-    /* ===== Auto-fit full name (up to 2 lines) ===== */
+    /* ===== Shrink-to-fit (single-line) ===== */
     function fitText(el){
-      el.style.fontSize = ""; // reset
+      el.style.fontSize = "";               // reset to CSS
+      el.style.letterSpacing = ".01em";
       const parent = el.parentElement;
       let size = parseFloat(getComputedStyle(el).fontSize);
-      const min = 12;
-      if (parent.clientWidth <= 0 || parent.clientHeight <= 0) return;
-
-      // tighten tracking slightly at small sizes
-      function setLS(sz){ el.style.letterSpacing = (sz < 36 ? "0" : "0.01em"); }
-
-      let guard = 500;
-      while (guard-- > 0 && size > min &&
-            (el.scrollWidth > parent.clientWidth || el.scrollHeight > parent.clientHeight)){
+      const min = 14;
+      // shrink until text fits horizontally
+      while (size > min && el.scrollWidth > parent.clientWidth) {
         size -= 1;
         el.style.fontSize = size + "px";
-        setLS(size);
+        if (size < 34) el.style.letterSpacing = "0";
+        if (size < 26) el.style.letterSpacing = "-0.01em";
       }
+      // tiny optical center
+      el.style.transform = "translateY(1px)";
     }
 
     let timer=null, showing=false, lastName="";
@@ -239,9 +235,6 @@
 
       requestAnimationFrame(()=>fitText(nameEl));
       setState("image", `showing "${text}"`);
-
-      // Optional chime
-      // try { document.getElementById('chime')?.play().catch(()=>{}); } catch {}
 
       clearTimeout(timer);
       timer = setTimeout(()=>{ setState("video","auto-revert"); showing=false; }, SHOW_MS);
@@ -264,7 +257,7 @@
 
     setState("video","listening…");
 
-    /* Toggle hitbox outline with ?debug=1 */
+    /* Optional: show hitbox outline with ?debug=1 */
     if (new URLSearchParams(location.search).get('debug')){
       document.querySelector('.name-box')?.classList.add('debug');
     }
