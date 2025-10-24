@@ -4,77 +4,134 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <title>Welcome Display — Soueast</title>
+
+  <!-- Display font -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
+
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png"/>
+
   <style>
     :root{
       --fade:.35s;
       --ink:#fff;
-      --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
+      --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png");
 
-      /* Black-bar hitbox (tuned) */
+      /* Black bar “hitbox” on your PNG (percent of card) */
       --box-top: 50.5%;
       --box-height: 10.2%;
       --box-left: 6%;
       --box-right: 6%;
+
+      /* Gold */
+      --gold1:#e7c072; --gold2:#f6e6b8; --gold3:#b88a3d;
     }
+
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .stage{position:fixed;inset:0;overflow:hidden}
+    html,body{
+      height:100%; margin:0; background:#000; color:var(--ink);
+      font-family:"Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    .stage{position:fixed; inset:0; overflow:hidden}
 
-    /* Video layer */
-    .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
-    .video.hidden{opacity:0;pointer-events:none}
-    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
-
-    /* Prefer full frame on wide screens (less cropping / better quality) */
-    @media (min-aspect-ratio: 16/10){
-      video{ object-fit: contain; background:#000; }
+    /* Background video */
+    .video{position:absolute; inset:0; transition:opacity var(--fade) ease}
+    .video.hidden{opacity:0; pointer-events:none}
+    video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000}
+    /* Prefer full frame on laptops (less crop) */
+    @media (min-aspect-ratio:16/10){
+      video{ object-fit:contain; background:#000 }
     }
 
-    /* Overlay (PNG + name) */
+    /* Cinematic depth */
+    .stage::after{
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background: radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,.0), rgba(0,0,0,.28));
+    }
+    .stage::before{
+      content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+      background-image: url('data:image/svg+xml;utf8,\
+      <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">\
+      <filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter>\
+      <rect width="100%" height="100%" filter="url(%23n)" opacity=".05"/></svg>');
+      mix-blend-mode: overlay; opacity:.32;
+    }
+
+    /* Overlay */
     .overlay{
-      position:absolute;inset:0;display:grid;place-items:center;
-      background:var(--veil);opacity:0;pointer-events:none;transition:opacity var(--fade) ease;
+      position:absolute; inset:0; display:grid; place-items:center;
+      background:var(--veil); opacity:0; pointer-events:none; transition:opacity var(--fade) ease;
     }
-    .overlay.visible{opacity:1;pointer-events:auto}
+    .overlay.visible{ opacity:1; pointer-events:auto }
 
+    /* Card (your PNG) */
     .frame{
-      width:clamp(260px,70vmin,920px);
+      width:clamp(280px, 70vmin, 980px);
       aspect-ratio:768/1365;
       background:center/cover no-repeat var(--img-url);
-      position:relative;
-      border-radius:22px;
-      box-shadow:0 24px 96px rgba(0,0,0,.55);
+      position:relative; border-radius:22px;
+      box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
+
+    /* Name bar hitbox */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
       top:var(--box-top);   height:var(--box-height);
-      display:flex;align-items:center;justify-content:center;
+      display:flex; align-items:center; justify-content:center;
       padding:.3rem .8rem;
     }
-    /* Toggle this for alignment debugging: .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
+    /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
+    /* Full name, up to 2 lines, JS auto-shrinks to fit width+height */
     .name{
-      width:100%;
-      text-align:center; font-weight:900; letter-spacing:.02em; text-transform:uppercase;
+      width:100%; text-align:center; font-weight:900; letter-spacing:.01em; text-transform:uppercase;
       color:#fff; text-shadow:0 3px 14px rgba(0,0,0,.55);
-      /* keep on one line inside the bar; JS shrinks if needed */
-      white-space:nowrap; overflow:hidden;
-      line-height:1.05;
-      font-size:clamp(20px,7.5vmin,84px);
+      white-space:normal; overflow:hidden; display:block; line-height:1.05;
+      font-size:clamp(20px, 7.2vmin, 86px);
+      word-break:break-word;
     }
 
-    .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.85;color:#0ff}
-
-    /* Phone-portrait: tiny nudge */
-    @media (max-width:600px) and (max-aspect-ratio: 9/16){
-      :root{ --box-top: 51.5%; --box-height: 10.6%; }
+    /* Luxe reveal */
+    @keyframes namePop {
+      0%   { transform: translateY(6px) scale(.96); letter-spacing:.08em; opacity:0 }
+      60%  { transform: translateY(0) scale(1.02); letter-spacing:.015em; opacity:1 }
+      100% { transform: translateY(0) scale(1); letter-spacing:.01em; }
     }
-    /* Very wide laptops/TVs */
-    @media (min-aspect-ratio: 16/9){
-      :root{ --box-top: 49.8%; --box-height: 9.6%; }
+    .name.sheen{
+      position:relative; isolation:isolate;
+      background: linear-gradient(90deg, var(--gold3), var(--gold2), var(--gold1));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation: namePop .85s cubic-bezier(.2,.8,.2,1);
+    }
+    .name.sheen::after{
+      content:""; position:absolute; inset:0; z-index:-1;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+      transform: skewX(-18deg) translateX(-120%);
+      animation: sweep 1.2s .15s ease-out both;
+      pointer-events:none;
+    }
+    @keyframes sweep { to { transform: skewX(-18deg) translateX(140%); opacity:0 } }
+
+    .name-underline{
+      position:absolute; left:15%; right:15%;
+      bottom:calc((100% - var(--box-height)) * -0.15);
+      height:3px; border-radius:999px;
+      background: linear-gradient(90deg, transparent, var(--gold2), transparent);
+      transform-origin:center; transform:scaleX(0);
+      animation: underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards;
+    }
+    @keyframes underlineGrow { to { transform:scaleX(1) } }
+
+    .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
+
+    /* Phone portrait: tiny nudge */
+    @media (max-width:600px) and (max-aspect-ratio:9/16){
+      :root{ --box-top: 51.2%; --box-height: 10.8% }
+    }
+    /* Wide laptops */
+    @media (min-aspect-ratio:16/9){
+      :root{ --box-top: 49.7%; --box-height: 9.6% }
     }
   </style>
 </head>
@@ -91,12 +148,20 @@
     <!-- Overlay -->
     <div class="overlay" id="overlay">
       <div class="frame">
-        <div class="name-box"><div class="name" id="nameEl">GUEST</div></div>
+        <div class="name-box">
+          <div class="name" id="nameEl">GUEST NAME</div>
+          <div class="name-underline" id="nameUL"></div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="status" id="status">state: video • initializing…</div>
+
+  <!-- (Optional) soft chime -->
+  <!-- <audio id="chime" preload="auto">
+    <source src="https://cdn.jsdelivr.net/gh/naptha/tiny-sfx@master/tones/confirm.mp3" type="audio/mpeg"/>
+  </audio> -->
 
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
@@ -104,11 +169,9 @@
 
   <script>
     /* ===== Config ===== */
-    const SHOW_MS = 10000;
+    const SHOW_MS = 5000;                 // <— 5 seconds
     const EVENT_ID = "Soueast";
-    const WATCH_NAME = `events/${EVENT_ID}/welcome/latest/name`;   // string name
-    // If you can add a timestamp in your scanner, also write latest/ts and swap to WATCH_OBJ below
-    // const WATCH_OBJ  = `events/${EVENT_ID}/welcome/latest`;      // { name, ts }
+    const WATCH_NAME = `events/${EVENT_ID}/welcome/latest/name`;
 
     const firebaseConfig = {
       apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
@@ -127,17 +190,9 @@
     const videoWrap = document.getElementById("videoWrap");
     const overlay = document.getElementById("overlay");
     const nameEl = document.getElementById("nameEl");
+    const nameUL = document.getElementById("nameUL");
     const bgVideo = document.getElementById("bgVideo");
     const showStatus = msg => statusEl.textContent = msg;
-
-    /* ===== First-name only ===== */
-    function firstNameOf(full=""){
-      const t = String(full).trim();
-      if (!t) return "GUEST";
-      // pick first word (supports basic latin & arabic letters)
-      const m = t.match(/[A-Za-z\u0600-\u06FF]+(?:'[A-Za-z]+)?/);
-      return (m ? m[0] : t.split(/\s+/)[0]).toUpperCase();
-    }
 
     /* ===== Autoplay bootstrap ===== */
     document.addEventListener("DOMContentLoaded", async () => {
@@ -151,52 +206,65 @@
       showStatus(`state: ${mode} • ${msg}`);
     }
 
-    /* ===== Fit text to the bar (single line) ===== */
+    /* ===== Auto-fit full name (up to 2 lines) ===== */
     function fitText(el){
-      el.style.fontSize = ""; // reset to CSS
+      el.style.fontSize = ""; // reset
       const parent = el.parentElement;
       let size = parseFloat(getComputedStyle(el).fontSize);
       const min = 12;
       if (parent.clientWidth <= 0 || parent.clientHeight <= 0) return;
-      while (size > min && (el.scrollWidth > parent.clientWidth || el.scrollHeight > parent.clientHeight)){
+
+      // tighten tracking slightly at small sizes
+      function setLS(sz){ el.style.letterSpacing = (sz < 36 ? "0" : "0.01em"); }
+
+      let guard = 500;
+      while (guard-- > 0 && size > min &&
+            (el.scrollWidth > parent.clientWidth || el.scrollHeight > parent.clientHeight)){
         size -= 1;
         el.style.fontSize = size + "px";
+        setLS(size);
       }
     }
 
-    /* ===== Show name for SHOW_MS ===== */
-    let timer=null, showing=false, lastShownAt=0, lastName="";
+    let timer=null, showing=false, lastName="";
     function showName(fullName){
       showing = true;
-      const first = firstNameOf(fullName);
-      nameEl.textContent = first;
+
+      const text = String(fullName || "Guest").trim().toUpperCase();
+      nameEl.textContent = text;
+
+      // Luxe entrance
+      nameEl.classList.remove('sheen'); void nameEl.offsetWidth; nameEl.classList.add('sheen');
+      if (nameUL){ nameUL.style.animation = 'none'; void nameUL.offsetWidth; nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards'; }
+
       requestAnimationFrame(()=>fitText(nameEl));
-      setState("image", `showing "${first}"`);
+      setState("image", `showing "${text}"`);
+
+      // Optional chime
+      // try { document.getElementById('chime')?.play().catch(()=>{}); } catch {}
+
       clearTimeout(timer);
-      lastShownAt = Date.now();
-      lastName = fullName;
       timer = setTimeout(()=>{ setState("video","auto-revert"); showing=false; }, SHOW_MS);
     }
 
-    /* ===== RTDB listener (string name) ===== */
+    /* ===== Listen (show only when value changes) ===== */
     const refName = db.ref(WATCH_NAME);
     refName.on("value", snap=>{
-      const raw = snap.val();
-      console.log("[DB]", WATCH_NAME, "=>", raw);
-      const name = (raw ?? "").toString().trim();
+      const name = (snap.val() ?? "").toString().trim();
+      console.log("[DB]", WATCH_NAME, "=>", name);
       if (!name){
         if (!overlay.classList.contains("visible")) setState("video","waiting…");
         return;
       }
-      // show on any change
-      if (name !== lastName) showName(name);
+      if (name !== lastName){
+        lastName = name;
+        showName(name);
+      }
     }, err => { console.warn("[DB] error", err); showStatus("state: video • db error"); });
 
-    
-    /* Start */
     setState("video","listening…");
 
-    /* Optional: turn on box debug with ?debug=1 */
+    /* Toggle hitbox outline with ?debug=1 */
     if (new URLSearchParams(location.search).get('debug')){
       document.querySelector('.name-box')?.classList.add('debug');
     }
