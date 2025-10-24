@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Welcome Display — Soueast</title>
+  <title>Welcome Display — Soueast (Simple)</title>
   <link rel="icon" href="/welcome.png"/>
   <style>
     :root{
       --fade:.35s;
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.85));
-      --img-url: url("/welcome.png");         /* PNG from /public */
-      /* Position of the black bar hitbox (percent of image) */
+      --img-url: url("/welcome.png"); /* PNG from /public */
+      /* Position (percent) of the black bar on your PNG */
       --box-top: 47%;
       --box-height: 8.5%;
       --box-left: 5%;
@@ -24,7 +24,7 @@
     /* Video layer */
     .video{position:absolute;inset:0;transition:opacity var(--fade) ease}
     .video.hidden{opacity:0;pointer-events:none}
-    .video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 
     /* Overlay (PNG + name) */
     .overlay{
@@ -41,7 +41,6 @@
       border-radius: 22px;
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
-
     .name-box{
       position:absolute;
       left: var(--box-left);
@@ -52,101 +51,46 @@
       padding:.3rem .8rem;
     }
     .name{
-      width:100%;
-      text-align:center;
-      font-weight:900;
-      letter-spacing:.03em;
-      text-transform:uppercase;
-      font-size: clamp(18px, 6.2vmin, 64px);
-      color:#fff;
-      text-shadow:0 3px 14px rgba(0,0,0,.55);
+      width:100%; text-align:center; font-weight:900; letter-spacing:.03em; text-transform:uppercase;
+      font-size:clamp(18px,6.2vmin,64px); color:#fff; text-shadow:0 3px 14px rgba(0,0,0,.55);
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.85;color:#0ff}
-    @media (max-width:600px){ .frame{ width:min(90vw, 95vh) } .name{ font-size:clamp(16px,7.5vw,42px) } }
-    @media (min-width:1440px){ .frame{ width:min(48vw, 96vh) } .name{ font-size:clamp(36px,4.8vw,92px) } }
+    @media (max-width:600px){ .frame{ width:min(90vw,95vh) } .name{ font-size:clamp(16px,7.5vw,42px) } }
+    @media (min-width:1440px){ .frame{ width:min(48vw,96vh) } .name{ font-size:clamp(36px,4.8vw,92px) } }
   </style>
 </head>
 <body>
   <div class="stage">
-    <!-- Background video (from /public/welcome.mp4) -->
+    <!-- Background video -->
     <div class="video" id="videoWrap">
       <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="/welcome.png">
-        <source src="https://www.w3schools.com/html/movie.mp4" type="video/mp4"/>
+        <source src="/welcome.mp4" type="video/mp4"/>
       </video>
     </div>
 
-    <!-- Overlay (PNG + name inside black bar) -->
+    <!-- Overlay with PNG + name -->
     <div class="overlay" id="overlay">
       <div class="frame">
-        <div class="name-box">
-          <div class="name" id="nameEl">GUEST NAME</div>
-        </div>
+        <div class="name-box"><div class="name" id="nameEl">GUEST NAME</div></div>
       </div>
     </div>
   </div>
 
   <div class="status" id="status">state: video • initializing…</div>
 
-  <!-- Bootstrap: play video even if modules fail, with retry/click fallback -->
+  <!-- 1) Firebase compat SDKs (no modules, super simple) -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database-compat.js"></script>
+
+  <!-- 2) Your app logic -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const v = document.getElementById('bgVideo');
-      const statusEl = document.getElementById('status');
-      if (!v) return;
-
-      v.addEventListener('loadeddata', () => {
-        if (statusEl.textContent.includes('initializing')) {
-          statusEl.textContent = 'state: video • first frame loaded';
-        }
-      });
-
-      async function start() {
-        try { v.muted = true; } catch {}
-        try {
-          await v.play();
-          statusEl.textContent = 'state: video • playing';
-        } catch {
-          // Retry once; if still blocked, require a click
-          setTimeout(async () => {
-            try { await v.play(); statusEl.textContent = 'state: video • playing (retry)'; }
-            catch {
-              statusEl.textContent = 'state: video • autoplay blocked — click to start';
-              const kick = () => v.play().catch(()=>{});
-              document.addEventListener('click', kick, { once:true });
-            }
-          }, 200);
-        }
-      }
-      start();
-    });
-  </script>
-
-  <!-- App logic (Firebase modules from Google CDN — stable version) -->
-  <script type="module">
-    /*************** Firebase (official CDN v11.0.2) ***************/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-
-    /*************** CONFIG ***************/
-    const SHOW_MS  = 10_000;  // show name for 10s
-    const EVENT_ID ="Soueast"
+    // === Config ===
+    const SHOW_MS  = 10_000; // show name for 10s
+    const EVENT_ID = 'Soueast';
     const WATCH_PATH = `events/${EVENT_ID}/welcome/latest/name`;
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
-      authDomain: "events-339ce.firebaseapp.com",
-      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "events-339ce",
-      storageBucket: "events-339ce.appspot.com",
-      messagingSenderId: "175601544315",
-      appId: "1:175601544315:web:00c94b4affa972b3a286de"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
-
-    /*************** Elements ***************/
+    // === Elements ===
     const statusEl  = document.getElementById('status');
     const videoWrap = document.getElementById('videoWrap');
     const overlay   = document.getElementById('overlay');
@@ -155,14 +99,13 @@
 
     const showStatus = (msg)=> statusEl.textContent = msg;
 
-    async function ensureVideoPlaying() {
-      try { bgVideo.muted = true; await bgVideo.play(); showStatus("state: video • playing"); }
-      catch {
-        showStatus("state: video • autoplay blocked — click to start");
-        const kick = () => { bgVideo.play().catch(()=>{}); document.removeEventListener('click', kick); };
-        document.addEventListener('click', kick, { once:true });
+    // Robust autoplay (works even if Firebase fails)
+    document.addEventListener('DOMContentLoaded', async () => {
+      try { bgVideo.muted = true; await bgVideo.play(); showStatus('state: video • playing'); }
+      catch { showStatus('state: video • autoplay blocked — click to start');
+        document.addEventListener('click', ()=> bgVideo.play().catch(()=>{}), { once:true });
       }
-    }
+    });
 
     function setState(mode,msg=""){
       if(mode==="image"){
@@ -172,20 +115,10 @@
       } else {
         overlay.classList.remove("visible");
         videoWrap.classList.remove("hidden");
-        ensureVideoPlaying();
+        try{ bgVideo.muted = true; bgVideo.play().catch(()=>{}); }catch{}
       }
       showStatus(`state: ${mode} • ${msg}`);
     }
-
-    /*************** Queue (rapid scans) ***************/
-    const queue=[]; let showing=false; let timer=null; let lastShown=""; const inQueue=new Set();
-    function enqueue(name){
-      if(!name) return;
-      const n=name.trim();
-      if(!n||n===lastShown||inQueue.has(n)||(queue.length&&queue[queue.length-1]===n))return;
-      inQueue.add(n); queue.push(n); processQueue();
-    }
-    function processQueue(){ if(showing) return; const next=queue.shift(); if(!next) return; inQueue.delete(next); showName(next); }
 
     function fitText(el){
       el.style.fontSize="";
@@ -195,32 +128,63 @@
       }
     }
 
+    let timer=null, showing=false;
     function showName(name){
-      showing=true;
-      nameEl.textContent = name.toUpperCase();
-      requestAnimationFrame(()=>{ fitText(nameEl); });
+      showing = true;
+      nameEl.textContent = String(name).toUpperCase();
+      requestAnimationFrame(()=> fitText(nameEl));
       setState("image", `showing "${name}"`);
       clearTimeout(timer);
-      timer = setTimeout(()=>{
-        lastShown = name;
-        setState("video", "auto-revert");
+      timer = setTimeout(() => {
+        setState("video","auto-revert");
         showing = false;
-        processQueue();
       }, SHOW_MS);
     }
 
-    /*************** Firebase listener ***************/
-    onValue(ref(db, WATCH_PATH), (snap)=>{
-      const name = (snap.val() ?? "").toString().trim();
-      if (name) enqueue(name);
-      else if (!overlay.classList.contains("visible")) setState("video","waiting…");
-    }, err => {
-      showStatus(`state: video • error: ${err?.message||err}`);
+    // === Firebase init (compat; simple!) ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
+      authDomain: "events-339ce.firebaseapp.com",
+      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "events-339ce",
+      storageBucket: "events-339ce.appspot.com",
+      messagingSenderId: "175601544315",
+      appId: "1:175601544315:web:00c94b4affa972b3a286de"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // === Listen to exactly events/<eventId>/welcome/latest/name ===
+    const pathRef = firebase.database().ref(WATCH_PATH);
+
+    // IMPORTANT: show on every change (even if same string comes twice)
+    let lastRaw = null;
+    pathRef.on('value', (snap) => {
+      const raw = snap.val();
+      // Log to console for quick debugging
+      console.log('[DB]', WATCH_PATH, '=>', raw);
+
+      const name = (raw ?? '').toString().trim();
+      if (!name) {
+        if (!overlay.classList.contains('visible')) setState('video','waiting…');
+        return;
+      }
+
+      // If same value arrives again, force show anyway to keep it simple
+      if (showing && name === lastRaw) {
+        // If currently showing, extend the timer
+        clearTimeout(timer);
+        timer = setTimeout(() => { setState('video','auto-revert'); showing=false; }, SHOW_MS);
+      } else {
+        showName(name);
+      }
+      lastRaw = name;
+    }, (err) => {
+      console.warn('[DB] error', err);
+      showStatus('state: video • db error');
     });
 
-    // Kick video once more from module context
-    ensureVideoPlaying();
-    showStatus("state: video • listening…");
+    // Start in video mode
+    setState("video","listening…");
   </script>
 </body>
 </html>
