@@ -8,20 +8,20 @@
   <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
-  <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png"/>
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png"/>
 
   <style>
     :root{
       --fade:.35s;
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
-      --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png");
+      --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png");
 
-      /* Black-bar hitbox (tuned for single-line name) */
-      --box-top: 50.3%;
-      --box-height: 9.4%;
-      --box-left: 6%;
-      --box-right: 6%;
+      /* Name hitbox tuned for 16:9 'winners stage' artwork (center area) */
+      --box-top: 47.5%;
+      --box-height: 12%;
+      --box-left: 10%;
+      --box-right: 10%;
 
       /* Gold tones */
       --gold1:#e7c072; --gold2:#f6e6b8; --gold3:#b88a3d;
@@ -64,16 +64,16 @@
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Card (PNG) */
+    /* Card (PNG) — updated to 16:9 */
     .frame{
-      width:clamp(280px, 70vmin, 980px);
-      aspect-ratio:768/1365;
+      width:clamp(320px, 90vmin, 1280px);
+      aspect-ratio:16/9;
       background:center/cover no-repeat var(--img-url);
       position:relative; border-radius:22px;
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
 
-    /* Black-bar hitbox */
+    /* Name hitbox */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
@@ -89,10 +89,10 @@
       color:#fff; text-shadow:0 3px 12px rgba(0,0,0,.55);
 
       white-space:nowrap; overflow:hidden;
-      line-height:1.0;                     /* optically centered in bar */
-      letter-spacing:.01em;                /* JS tightens as needed */
-      font-size:clamp(22px, 6.5vmin, 72px);
-      transform:translateY(1px);           /* tiny optical center */
+      line-height:1.0;
+      letter-spacing:.01em;
+      font-size:clamp(22px, 7vmin, 78px);
+      transform:translateY(1px);
     }
 
     /* Luxe reveal */
@@ -118,7 +118,7 @@
 
     .name-underline{
       position:absolute; left:18%; right:18%;
-      bottom:calc((100% - var(--box-height)) * -0.18);
+      bottom:calc((100% - var(--box-height)) * -0.20);
       height:3px; border-radius:999px;
       background: linear-gradient(90deg, transparent, var(--gold2), transparent);
       transform-origin:center; transform:scaleX(0);
@@ -128,13 +128,13 @@
 
     .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
 
-    /* Phone portrait: nudge */
+    /* Phone portrait: give more vertical room */
     @media (max-width:600px) and (max-aspect-ratio:9/16){
-      :root{ --box-top: 51.0%; --box-height: 10.0% }
+      :root{ --box-top: 49.5%; --box-height: 13% }
     }
-    /* Wide laptops */
+    /* Very wide laptops: center slightly lower */
     @media (min-aspect-ratio:16/9){
-      :root{ --box-top: 49.9%; --box-height: 9.2% }
+      :root{ --box-top: 48.5%; --box-height: 11.5% }
     }
   </style>
 </head>
@@ -143,8 +143,8 @@
     <!-- Background video -->
     <div class="video" id="videoWrap">
       <video id="bgVideo" autoplay muted loop playsinline preload="auto"
-        poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@4a8adbb28a506932c49d23d008f82c420d9191d3/public/welcome.png">
-        <source src="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@1282265f9fa3a3359587bb62544ec0e80464637a/public/screen%201.%20H.mp4"/>
+        poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png">
+        <source src="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@1282265f9fa3a3359587bb62544ec0e80464637a/public/screen%201.%20H.mp4" type="video/mp4"/>
       </video>
     </div>
 
@@ -211,14 +211,12 @@
       const parent = el.parentElement;
       let size = parseFloat(getComputedStyle(el).fontSize);
       const min = 14;
-      // shrink until text fits horizontally
       while (size > min && el.scrollWidth > parent.clientWidth) {
         size -= 1;
         el.style.fontSize = size + "px";
         if (size < 34) el.style.letterSpacing = "0";
         if (size < 26) el.style.letterSpacing = "-0.01em";
       }
-      // tiny optical center
       el.style.transform = "translateY(1px)";
     }
 
@@ -229,7 +227,6 @@
       const text = String(fullName || "Guest").trim().toUpperCase();
       nameEl.textContent = text;
 
-      // Luxe entrance
       nameEl.classList.remove('sheen'); void nameEl.offsetWidth; nameEl.classList.add('sheen');
       if (nameUL){ nameUL.style.animation = 'none'; void nameUL.offsetWidth; nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards'; }
 
