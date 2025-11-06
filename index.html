@@ -8,17 +8,17 @@
   <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
-  <!-- Use the winners-stage artwork as favicon -->
-  <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png"/>
+  <!-- Favicon uses the same artwork -->
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png"/>
 
   <style>
     :root{
       --fade:.35s;
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
-      --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png");
+      --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png");
 
-      /* Name hitbox for centered 2:1 layout */
+      /* Name hitbox for centered layout on 2:1 stage */
       --box-top: 51.5%;
       --box-height: 11%;
       --box-left: 10%;
@@ -35,7 +35,7 @@
     }
     .stage{position:fixed; inset:0; overflow:hidden}
 
-    /* Background video fills viewport; hidden while the name card is visible */
+    /* Background area (kept as <video> for structure, but no source so it shows the poster image) */
     .video{position:absolute; inset:0; transition:opacity var(--fade) ease}
     .video.hidden{opacity:0; pointer-events:none}
     video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000}
@@ -61,12 +61,10 @@
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Card (PNG) — JS will size this to the largest 2:1 rectangle that fits the viewport */
+    /* Card — sized to the largest 2:1 box inside the viewport to avoid any cropping */
     .frame{
-      /* no aspect-ratio here; we control exact px size with JS to avoid crop */
-      background: center/contain no-repeat var(--img-url); /* NEVER crops */
+      background: center/contain no-repeat var(--img-url); /* never crops */
       position:relative;
-      /* no border radius to avoid black corners on stage */
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
 
@@ -78,7 +76,6 @@
       display:flex; align-items:center; justify-content:center;
       padding:.3rem .8rem;
     }
-
     /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
     .name{
@@ -126,11 +123,11 @@
 </head>
 <body>
   <div class="stage">
-    <!-- Background video -->
+    <!-- Background (video shell shows poster image only) -->
     <div class="video" id="videoWrap">
-      <video id="bgVideo" autoplay muted loop playsinline preload="auto"
-        poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png">
-        <source src="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@1282265f9fa3a3359587bb62544ec0e80464637a/public/screen%201.%20H.mp4" type="video/mp4"/>
+      <video id="bgVideo" playsinline preload="auto"
+        poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png">
+        <!-- No <source> on purpose: we only need the poster image -->
       </video>
     </div>
 
@@ -145,7 +142,7 @@
     </div>
   </div>
 
-  <div class="status" id="status">state: video • initializing…</div>
+  <div class="status" id="status">state: image • initializing…</div>
 
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
@@ -175,15 +172,13 @@
     const overlay = document.getElementById("overlay");
     const nameEl = document.getElementById("nameEl");
     const nameUL = document.getElementById("nameUL");
-    const bgVideo = document.getElementById("bgVideo");
     const frame = document.getElementById("frame");
     const showStatus = msg => statusEl.textContent = msg;
 
     /* ===== Fit the card to the largest 2:1 box inside viewport (no crop) ===== */
     function sizeFrame(){
       const W = window.innerWidth, H = window.innerHeight;
-      // target 2:1 rectangle that fits INSIDE viewport
-      const targetW = Math.min(W, 2*H);
+      const targetW = Math.min(W, 2*H);   // largest width that keeps 2:1 inside viewport
       const targetH = targetW / 2;
       frame.style.width  = targetW + "px";
       frame.style.height = targetH + "px";
@@ -191,17 +186,13 @@
     window.addEventListener("resize", sizeFrame);
     sizeFrame();
 
-    /* ===== Autoplay bootstrap ===== */
-    document.addEventListener("DOMContentLoaded", async () => {
-      try { bgVideo.muted = true; await bgVideo.play(); showStatus("state: video • playing"); }
-      catch { showStatus("state: video • click to start"); document.addEventListener("click", ()=>bgVideo.play(),{once:true}); }
-    });
-
+    /* ===== Initial state: show overlay image immediately ===== */
     function setState(mode,msg=""){
-      if(mode==="image"){ videoWrap.classList.add("hidden"); overlay.classList.add("visible"); try{bgVideo.pause();}catch{} }
-      else { overlay.classList.remove("visible"); videoWrap.classList.remove("hidden"); bgVideo.muted=true; bgVideo.play().catch(()=>{}); }
+      if(mode==="image"){ videoWrap.classList.add("hidden"); overlay.classList.add("visible"); }
+      else { overlay.classList.remove("visible"); videoWrap.classList.remove("hidden"); }
       showStatus(`state: ${mode} • ${msg}`);
     }
+    setState("image","ready");
 
     /* ===== Shrink-to-fit (single-line) ===== */
     function fitText(el){
@@ -233,7 +224,7 @@
       setState("image", `showing "${text}"`);
 
       clearTimeout(timer);
-      timer = setTimeout(()=>{ setState("video","auto-revert"); showing=false; }, SHOW_MS);
+      timer = setTimeout(()=>{ setState("image","holding"); showing=false; }, SHOW_MS);
     }
 
     /* ===== Listen (show only when value changes) ===== */
@@ -242,21 +233,14 @@
       const name = (snap.val() ?? "").toString().trim();
       console.log("[DB]", WATCH_NAME, "=>", name);
       if (!name){
-        if (!overlay.classList.contains("visible")) setState("video","waiting…");
+        if (!overlay.classList.contains("visible")) setState("image","waiting…");
         return;
       }
       if (name !== lastName){
         lastName = name;
         showName(name);
       }
-    }, err => { console.warn("[DB] error", err); showStatus("state: video • db error"); });
-
-    setState("video","listening…");
-
-    /* Optional: show hitbox outline with ?debug=1 */
-    if (new URLSearchParams(location.search).get('debug')){
-      document.querySelector('.name-box')?.classList.add('debug');
-    }
+    }, err => { console.warn("[DB] error", err); showStatus("state: image • db error"); });
   </script>
 </body>
 </html>
