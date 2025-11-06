@@ -17,9 +17,9 @@
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png");
 
-      /* Name hitbox tuned for 16:9 'winners stage' artwork (center area) */
-      --box-top: 47.5%;
-      --box-height: 12%;
+      /* Name hitbox tuned for 2:1 wall (center area) */
+      --box-top: 51.5%;
+      --box-height: 11%;
       --box-left: 10%;
       --box-right: 10%;
 
@@ -64,10 +64,10 @@
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Card (PNG) — updated to 16:9 */
+    /* Card (PNG) — fixed to 2:1 for stage wall */
     .frame{
-      width:clamp(320px, 90vmin, 1280px);
-      aspect-ratio:16/9;
+      width:clamp(320px, 90vmin, 1920px);
+      aspect-ratio:2/1;
       background:center/cover no-repeat var(--img-url);
       position:relative; border-radius:22px;
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
@@ -91,7 +91,7 @@
       white-space:nowrap; overflow:hidden;
       line-height:1.0;
       letter-spacing:.01em;
-      font-size:clamp(22px, 7vmin, 78px);
+      font-size:clamp(22px, 7vmin, 84px);
       transform:translateY(1px);
     }
 
@@ -128,13 +128,9 @@
 
     .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
 
-    /* Phone portrait: give more vertical room */
+    /* Slight nudge on narrow phones if you ever preview there */
     @media (max-width:600px) and (max-aspect-ratio:9/16){
-      :root{ --box-top: 49.5%; --box-height: 13% }
-    }
-    /* Very wide laptops: center slightly lower */
-    @media (min-aspect-ratio:16/9){
-      :root{ --box-top: 48.5%; --box-height: 11.5% }
+      :root{ --box-top: 52.5%; --box-height: 12% }
     }
   </style>
 </head>
