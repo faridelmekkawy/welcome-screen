@@ -8,6 +8,7 @@
   <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
+  <!-- Favicon uses the same artwork -->
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png"/>
 
   <style>
@@ -17,12 +18,13 @@
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png");
 
-      /* original hitbox settings */
-      --box-top: 50.3%;
-      --box-height: 9.4%;
-      --box-left: 6%;
-      --box-right: 6%;
+      /* Name hitbox for centered layout on 2:1 stage (from your PNG version) */
+      --box-top: 51.5%;
+      --box-height: 11%;
+      --box-left: 10%;
+      --box-right: 10%;
 
+      /* Gold tones */
       --gold1:#e7c072; --gold2:#f6e6b8; --gold3:#b88a3d;
     }
 
@@ -33,15 +35,16 @@
     }
     .stage{position:fixed; inset:0; overflow:hidden}
 
-    /* Background video — original scaling (not zoomed) */
+    /* Background video — same behavior as your original (not zoomed) */
     .video{position:absolute; inset:0; transition:opacity var(--fade) ease}
     .video.hidden{opacity:0; pointer-events:none}
     video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000}
+    /* Prefer full frame on wider displays (e.g., 2:1 LED) */
     @media (min-aspect-ratio:16/10){
-      video{object-fit:contain; background:#000}
+      video{ object-fit:contain; background:#000 }
     }
 
-    /* Depth overlay */
+    /* Subtle vignette & film noise */
     .stage::after{
       content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
       background: radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0), rgba(0,0,0,.28));
@@ -55,29 +58,30 @@
       mix-blend-mode: overlay; opacity:.32;
     }
 
-    /* Overlay */
+    /* Overlay (card + name) */
     .overlay{
       position:absolute; inset:0; display:grid; place-items:center;
       background:var(--veil); opacity:0; pointer-events:none; transition:opacity var(--fade) ease;
     }
-    .overlay.visible{opacity:1; pointer-events:auto}
+    .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Frame with new PNG */
+    /* Card — sized to the largest 2:1 box inside the viewport to avoid any cropping */
     .frame{
-      width:clamp(280px, 70vmin, 980px);
-      aspect-ratio:768/1365;
-      background:center/cover no-repeat var(--img-url);
-      position:relative; border-radius:22px;
-      box-shadow:0 24px 96px rgba(0,0,0,.55);
+      background: center/contain no-repeat var(--img-url); /* never crops */
+      position:relative;
+      box-shadow: 0 24px 96px rgba(0,0,0,.55);
+      /* width/height set by JS for perfect 2:1 fit */
     }
 
+    /* Name hitbox (percentages relative to the 2:1 card) */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
-      top:var(--box-top); height:var(--box-height);
+      top:var(--box-top);   height:var(--box-height);
       display:flex; align-items:center; justify-content:center;
       padding:.3rem .8rem;
     }
+    /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
     .name{
       width:100%; text-align:center; font-weight:900; text-transform:uppercase;
@@ -85,46 +89,46 @@
       white-space:nowrap; overflow:hidden;
       line-height:1.0;
       letter-spacing:.01em;
-      font-size:clamp(22px,6.5vmin,72px);
+      font-size:clamp(22px, 7vmin, 84px);
       transform:translateY(1px);
     }
 
-    @keyframes namePop{
-      0%{transform:translateY(7px)scale(.96);letter-spacing:.08em;opacity:0}
-      60%{transform:translateY(1px)scale(1.02);letter-spacing:.015em;opacity:1}
-      100%{transform:translateY(1px)scale(1);letter-spacing:.01em}
+    @keyframes namePop {
+      0%   { transform: translateY(7px) scale(.96); letter-spacing:.08em; opacity:0 }
+      60%  { transform: translateY(1px) scale(1.02); letter-spacing:.015em; opacity:1 }
+      100% { transform: translateY(1px) scale(1); letter-spacing:.01em; }
     }
     .name.sheen{
-      position:relative;isolation:isolate;
-      background:linear-gradient(90deg,var(--gold3),var(--gold2),var(--gold1));
-      -webkit-background-clip:text;background-clip:text;color:transparent;
-      animation:namePop .85s cubic-bezier(.2,.8,.2,1);
+      position:relative; isolation:isolate;
+      background: linear-gradient(90deg, var(--gold3), var(--gold2), var(--gold1));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation: namePop .85s cubic-bezier(.2,.8,.2,1);
     }
     .name.sheen::after{
-      content:"";position:absolute;inset:0;z-index:-1;
-      background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55)50%,transparent 65%);
-      transform:skewX(-18deg)translateX(-120%);
-      animation:sweep 1.2s .15s ease-out both;
+      content:""; position:absolute; inset:0; z-index:-1;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+      transform: skewX(-18deg) translateX(-120%);
+      animation: sweep 1.2s .15s ease-out both;
       pointer-events:none;
     }
-    @keyframes sweep{to{transform:skewX(-18deg)translateX(140%);opacity:0}}
+    @keyframes sweep { to { transform: skewX(-18deg) translateX(140%); opacity:0 } }
 
     .name-underline{
-      position:absolute;left:18%;right:18%;
-      bottom:calc((100%-var(--box-height))*-0.18);
-      height:3px;border-radius:999px;
-      background:linear-gradient(90deg,transparent,var(--gold2),transparent);
-      transform-origin:center;transform:scaleX(0);
-      animation:underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1)forwards;
+      position:absolute; left:18%; right:18%;
+      bottom:calc((100% - var(--box-height)) * -0.20);
+      height:3px; border-radius:999px;
+      background: linear-gradient(90deg, transparent, var(--gold2), transparent);
+      transform-origin:center; transform:scaleX(0);
+      animation: underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards;
     }
-    @keyframes underlineGrow{to{transform:scaleX(1)}}
+    @keyframes underlineGrow { to { transform:scaleX(1) } }
 
-    .status{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace;opacity:.85;color:#0ff}
+    .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
   </style>
 </head>
 <body>
   <div class="stage">
-    <!-- Background video -->
+    <!-- Background video (kept exactly like your original) -->
     <div class="video" id="videoWrap">
       <video id="bgVideo" autoplay muted loop playsinline preload="auto"
         poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png">
@@ -132,9 +136,9 @@
       </video>
     </div>
 
-    <!-- Overlay -->
+    <!-- Overlay (card + single-line name) -->
     <div class="overlay" id="overlay">
-      <div class="frame">
+      <div class="frame" id="frame">
         <div class="name-box">
           <div class="name" id="nameEl">GUEST NAME</div>
           <div class="name-underline" id="nameUL"></div>
@@ -145,30 +149,115 @@
 
   <div class="status" id="status">state: video • initializing…</div>
 
-  <!-- Firebase -->
+  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database-compat.js"></script>
 
   <script>
-    const SHOW_MS=5000,EVENT_ID="Soueast",WATCH_NAME=`events/${EVENT_ID}/welcome/latest/name`;
-    const firebaseConfig={apiKey:"AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",authDomain:"events-339ce.firebaseapp.com",databaseURL:"https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",projectId:"events-339ce",storageBucket:"events-339ce.appspot.com",messagingSenderId:"175601544315",appId:"1:175601544315:web:00c94b4affa972b3a286de"};
+    /* ===== Config ===== */
+    const SHOW_MS = 5000;                 // 5 seconds
+    const EVENT_ID = "Soueast";
+    const WATCH_NAME = `events/${EVENT_ID}/welcome/latest/name`;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA80bAAGPuyscnTVS-zwrxE9Jp3tPiS1gM",
+      authDomain: "events-339ce.firebaseapp.com",
+      databaseURL: "https://events-339ce-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "events-339ce",
+      storageBucket: "events-339ce.appspot.com",
+      messagingSenderId: "175601544315",
+      appId: "1:175601544315:web:00c94b4affa972b3a286de"
+    };
     firebase.initializeApp(firebaseConfig);
 
-    const db=firebase.database(),statusEl=document.getElementById("status"),videoWrap=document.getElementById("videoWrap"),overlay=document.getElementById("overlay"),nameEl=document.getElementById("nameEl"),nameUL=document.getElementById("nameUL"),bgVideo=document.getElementById("bgVideo"),showStatus=msg=>statusEl.textContent=msg;
+    /* ===== Elements ===== */
+    const db = firebase.database();
+    const statusEl = document.getElementById("status");
+    const videoWrap = document.getElementById("videoWrap");
+    const overlay = document.getElementById("overlay");
+    const nameEl = document.getElementById("nameEl");
+    const nameUL = document.getElementById("nameUL");
+    const frame = document.getElementById("frame");
+    const bgVideo = document.getElementById("bgVideo");
+    const showStatus = msg => statusEl.textContent = msg;
 
-    document.addEventListener("DOMContentLoaded",async()=>{try{bgVideo.muted=true;await bgVideo.play();showStatus("state: video • playing")}catch{showStatus("state: video • click to start");document.addEventListener("click",()=>bgVideo.play(),{once:true})}});
+    /* ===== Fit the card to the largest 2:1 box inside viewport (no crop) ===== */
+    function sizeFrame(){
+      const W = window.innerWidth, H = window.innerHeight;
+      const targetW = Math.min(W, 2*H);   // largest width that keeps 2:1 inside viewport
+      const targetH = targetW / 2;
+      frame.style.width  = targetW + "px";
+      frame.style.height = targetH + "px";
+    }
+    window.addEventListener("resize", sizeFrame);
+    sizeFrame();
 
-    function setState(mode,msg=""){if(mode==="image"){videoWrap.classList.add("hidden");overlay.classList.add("visible");try{bgVideo.pause()}catch{}}else{overlay.classList.remove("visible");videoWrap.classList.remove("hidden");bgVideo.muted=true;bgVideo.play().catch(()=>{})}showStatus(`state: ${mode} • ${msg}`)}
+    /* ===== Autoplay bootstrap (unchanged) ===== */
+    document.addEventListener("DOMContentLoaded", async () => {
+      try { bgVideo.muted = true; await bgVideo.play(); showStatus("state: video • playing"); }
+      catch { showStatus("state: video • click to start"); document.addEventListener("click", ()=>bgVideo.play(),{once:true}); }
+    });
 
-    function fitText(el){el.style.fontSize="";el.style.letterSpacing=".01em";const parent=el.parentElement;let size=parseFloat(getComputedStyle(el).fontSize);const min=14;while(size>min&&el.scrollWidth>parent.clientWidth){size-=1;el.style.fontSize=size+"px";if(size<34)el.style.letterSpacing="0";if(size<26)el.style.letterSpacing="-0.01em"}el.style.transform="translateY(1px)"}
+    function setState(mode,msg=""){
+      if(mode==="image"){ videoWrap.classList.add("hidden"); overlay.classList.add("visible"); try{bgVideo.pause();}catch{} }
+      else { overlay.classList.remove("visible"); videoWrap.classList.remove("hidden"); bgVideo.muted=true; bgVideo.play().catch(()=>{}); }
+      showStatus(`state: ${mode} • ${msg}`);
+    }
 
-    let timer=null,showing=false,lastName="";
-    function showName(fullName){showing=true;const text=String(fullName||"Guest").trim().toUpperCase();nameEl.textContent=text;nameEl.classList.remove("sheen");void nameEl.offsetWidth;nameEl.classList.add("sheen");if(nameUL){nameUL.style.animation="none";void nameUL.offsetWidth;nameUL.style.animation="underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards"}requestAnimationFrame(()=>fitText(nameEl));setState("image",`showing "${text}"`);clearTimeout(timer);timer=setTimeout(()=>{setState("video","auto-revert");showing=false},SHOW_MS)}
+    /* ===== Shrink-to-fit (single-line) ===== */
+    function fitText(el){
+      el.style.fontSize = "";               // reset to CSS
+      el.style.letterSpacing = ".01em";
+      const parent = el.parentElement;
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      const min = 14;
+      while (size > min && el.scrollWidth > parent.clientWidth) {
+        size -= 1;
+        el.style.fontSize = size + "px";
+        if (size < 34) el.style.letterSpacing = "0";
+        if (size < 26) el.style.letterSpacing = "-0.01em";
+      }
+      el.style.transform = "translateY(1px)";
+    }
 
-    const refName=db.ref(WATCH_NAME);
-    refName.on("value",snap=>{const name=(snap.val()??"").toString().trim();if(!name){if(!overlay.classList.contains("visible"))setState("video","waiting…");return;}if(name!==lastName){lastName=name;showName(name)}},err=>{console.warn("[DB] error",err);showStatus("state: video • db error")});
+    let timer=null, showing=false, lastName="";
+    function showName(fullName){
+      showing = true;
+
+      const text = String(fullName || "Guest").trim().toUpperCase();
+      nameEl.textContent = text;
+
+      nameEl.classList.remove('sheen'); void nameEl.offsetWidth; nameEl.classList.add('sheen');
+      if (nameUL){ nameUL.style.animation = 'none'; void nameUL.offsetWidth; nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards'; }
+
+      requestAnimationFrame(()=>{ fitText(nameEl); sizeFrame(); });
+      setState("image", `showing "${text}"`);
+
+      clearTimeout(timer);
+      timer = setTimeout(()=>{ setState("video","auto-revert"); showing=false; }, SHOW_MS);
+    }
+
+    /* ===== Listen (show only when value changes) ===== */
+    const refName = db.ref(WATCH_NAME);
+    refName.on("value", snap=>{
+      const name = (snap.val() ?? "").toString().trim();
+      console.log("[DB]", WATCH_NAME, "=>", name);
+      if (!name){
+        if (!overlay.classList.contains("visible")) setState("video","waiting…");
+        return;
+      }
+      if (name !== lastName){
+        lastName = name;
+        showName(name);
+      }
+    }, err => { console.warn("[DB] error", err); showStatus("state: video • db error"); });
 
     setState("video","listening…");
+
+    /* Optional: show hitbox outline with ?debug=1 */
+    if (new URLSearchParams(location.search).get('debug')){
+      document.querySelector('.name-box')?.classList.add('debug');
+    }
   </script>
 </body>
 </html>
