@@ -8,6 +8,7 @@
   <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
+  <!-- Use the winners-stage artwork as favicon -->
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png"/>
 
   <style>
@@ -17,7 +18,7 @@
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@37f96fef0cd5f0c7ebfb1b4bfa84860928423b7d/public/screen%20winners.%20stage.png");
 
-      /* Name hitbox tuned for 2:1 wall (center area) */
+      /* Name hitbox for centered 2:1 layout */
       --box-top: 51.5%;
       --box-height: 11%;
       --box-left: 10%;
@@ -34,19 +35,15 @@
     }
     .stage{position:fixed; inset:0; overflow:hidden}
 
-    /* Background video */
+    /* Background video fills viewport; hidden while the name card is visible */
     .video{position:absolute; inset:0; transition:opacity var(--fade) ease}
     .video.hidden{opacity:0; pointer-events:none}
     video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000}
-    /* Prefer full frame on laptops (less crop) */
-    @media (min-aspect-ratio:16/10){
-      video{ object-fit:contain; background:#000 }
-    }
 
-    /* Cinematic depth */
+    /* Subtle vignette & film noise */
     .stage::after{
       content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
-      background: radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,.0), rgba(0,0,0,.28));
+      background: radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0), rgba(0,0,0,.28));
     }
     .stage::before{
       content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
@@ -57,23 +54,23 @@
       mix-blend-mode: overlay; opacity:.32;
     }
 
-    /* Overlay */
+    /* Overlay (card + name) */
     .overlay{
       position:absolute; inset:0; display:grid; place-items:center;
       background:var(--veil); opacity:0; pointer-events:none; transition:opacity var(--fade) ease;
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Card (PNG) — fixed to 2:1 for stage wall */
+    /* Card (PNG) — JS will size this to the largest 2:1 rectangle that fits the viewport */
     .frame{
-      width:clamp(320px, 90vmin, 1920px);
-      aspect-ratio:2/1;
-      background:center/cover no-repeat var(--img-url);
-      position:relative; border-radius:22px;
+      /* no aspect-ratio here; we control exact px size with JS to avoid crop */
+      background: center/contain no-repeat var(--img-url); /* NEVER crops */
+      position:relative;
+      /* no border radius to avoid black corners on stage */
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
     }
 
-    /* Name hitbox */
+    /* Name hitbox (percentages relative to the 2:1 card) */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
@@ -81,13 +78,12 @@
       display:flex; align-items:center; justify-content:center;
       padding:.3rem .8rem;
     }
+
     /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
-    /* SINGLE-LINE name, auto-shrinks to fit width */
     .name{
       width:100%; text-align:center; font-weight:900; text-transform:uppercase;
       color:#fff; text-shadow:0 3px 12px rgba(0,0,0,.55);
-
       white-space:nowrap; overflow:hidden;
       line-height:1.0;
       letter-spacing:.01em;
@@ -95,7 +91,6 @@
       transform:translateY(1px);
     }
 
-    /* Luxe reveal */
     @keyframes namePop {
       0%   { transform: translateY(7px) scale(.96); letter-spacing:.08em; opacity:0 }
       60%  { transform: translateY(1px) scale(1.02); letter-spacing:.015em; opacity:1 }
@@ -127,11 +122,6 @@
     @keyframes underlineGrow { to { transform:scaleX(1) } }
 
     .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
-
-    /* Slight nudge on narrow phones if you ever preview there */
-    @media (max-width:600px) and (max-aspect-ratio:9/16){
-      :root{ --box-top: 52.5%; --box-height: 12% }
-    }
   </style>
 </head>
 <body>
@@ -146,7 +136,7 @@
 
     <!-- Overlay (card + single-line name) -->
     <div class="overlay" id="overlay">
-      <div class="frame">
+      <div class="frame" id="frame">
         <div class="name-box">
           <div class="name" id="nameEl">GUEST NAME</div>
           <div class="name-underline" id="nameUL"></div>
@@ -186,7 +176,20 @@
     const nameEl = document.getElementById("nameEl");
     const nameUL = document.getElementById("nameUL");
     const bgVideo = document.getElementById("bgVideo");
+    const frame = document.getElementById("frame");
     const showStatus = msg => statusEl.textContent = msg;
+
+    /* ===== Fit the card to the largest 2:1 box inside viewport (no crop) ===== */
+    function sizeFrame(){
+      const W = window.innerWidth, H = window.innerHeight;
+      // target 2:1 rectangle that fits INSIDE viewport
+      const targetW = Math.min(W, 2*H);
+      const targetH = targetW / 2;
+      frame.style.width  = targetW + "px";
+      frame.style.height = targetH + "px";
+    }
+    window.addEventListener("resize", sizeFrame);
+    sizeFrame();
 
     /* ===== Autoplay bootstrap ===== */
     document.addEventListener("DOMContentLoaded", async () => {
@@ -226,7 +229,7 @@
       nameEl.classList.remove('sheen'); void nameEl.offsetWidth; nameEl.classList.add('sheen');
       if (nameUL){ nameUL.style.animation = 'none'; void nameUL.offsetWidth; nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards'; }
 
-      requestAnimationFrame(()=>fitText(nameEl));
+      requestAnimationFrame(()=>{ fitText(nameEl); sizeFrame(); });
       setState("image", `showing "${text}"`);
 
       clearTimeout(timer);
