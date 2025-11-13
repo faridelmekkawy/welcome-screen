@@ -8,7 +8,7 @@
   <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
-  <!-- Favicon uses the same artwork -->
+  <!-- Favicon (keep as-is or change later) -->
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png"/>
 
   <style>
@@ -16,10 +16,9 @@
       --fade:.35s;
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
-      --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png");
 
-      /* Name hitbox for centered layout on 2:1 stage (from your PNG version) */
-      --box-top: 51.5%;
+      /* Name hitbox for centered layout on full-screen overlay */
+      --box-top: 52%;
       --box-height: 11%;
       --box-left: 10%;
       --box-right: 10%;
@@ -35,11 +34,15 @@
     }
     .stage{position:fixed; inset:0; overflow:hidden}
 
-    /* Background video — same behavior as your original (not zoomed) */
+    /* Background idle video */
     .video{position:absolute; inset:0; transition:opacity var(--fade) ease}
     .video.hidden{opacity:0; pointer-events:none}
-    video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000}
-    /* Prefer full frame on wider displays (e.g., 2:1 LED) */
+    video{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover; background:#000;
+    }
+    /* Prefer full frame on wider displays */
     @media (min-aspect-ratio:16/10){
       video{ object-fit:contain; background:#000 }
     }
@@ -58,28 +61,36 @@
       mix-blend-mode: overlay; opacity:.32;
     }
 
-    /* Overlay (card + name) */
+    /* Overlay: second video + name */
     .overlay{
       position:absolute; inset:0; display:grid; place-items:center;
       background:var(--veil); opacity:0; pointer-events:none; transition:opacity var(--fade) ease;
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Card — sized to the largest 2:1 box inside the viewport to avoid any cropping */
+    /* Full-screen foreground video container */
     .frame{
-      background: center/contain no-repeat var(--img-url); /* never crops */
       position:relative;
+      width:100%;
+      height:100%;
       box-shadow: 0 24px 96px rgba(0,0,0,.55);
-      /* width/height set by JS for perfect 2:1 fit */
+      overflow:hidden;
+    }
+    .frame video{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      background:#000;
     }
 
-    /* Name hitbox (percentages relative to the 2:1 card) */
+    /* Name hitbox on top of foreground video */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
       top:var(--box-top);   height:var(--box-height);
       display:flex; align-items:center; justify-content:center;
       padding:.3rem .8rem;
+      z-index:2;
     }
     /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
@@ -120,25 +131,33 @@
       background: linear-gradient(90deg, transparent, var(--gold2), transparent);
       transform-origin:center; transform:scaleX(0);
       animation: underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards;
+      z-index:2;
     }
     @keyframes underlineGrow { to { transform:scaleX(1) } }
 
-    .status{ position:fixed; left:10px; bottom:10px; font:12px ui-monospace,monospace; opacity:.85; color:#0ff }
+    .status{
+      position:fixed; left:10px; bottom:10px;
+      font:12px ui-monospace,monospace; opacity:.85; color:#0ff;
+      z-index:10;
+    }
   </style>
 </head>
 <body>
   <div class="stage">
-    <!-- Background video (kept exactly like your original) -->
+    <!-- Idle background looping video (screen vid.mp4) -->
     <div class="video" id="videoWrap">
       <video id="bgVideo" autoplay muted loop playsinline preload="auto"
-        poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@dd7ba29c3fa0b89c70e7d7870eec2d4cb7bebb53/public/screen2.png">
-        <source src="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@1282265f9fa3a3359587bb62544ec0e80464637a/public/screen%201.%20H.mp4" type="video/mp4"/>
+        poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@6eec26474cdc86d0f43970659520e2e14704fb16/screen%20vid.mp4">
+        <source src="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@6eec26474cdc86d0f43970659520e2e14704fb16/screen%20vid.mp4" type="video/mp4"/>
       </video>
     </div>
 
-    <!-- Overlay (card + single-line name) -->
+    <!-- Overlay: second video (screen vid2.mp4) + name -->
     <div class="overlay" id="overlay">
       <div class="frame" id="frame">
+        <video id="fgVideo" muted playsinline preload="auto">
+          <source src="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@6eec26474cdc86d0f43970659520e2e14704fb16/screen%20vid2.mp4" type="video/mp4"/>
+        </video>
         <div class="name-box">
           <div class="name" id="nameEl">GUEST NAME</div>
           <div class="name-underline" id="nameUL"></div>
@@ -179,32 +198,51 @@
     const nameUL = document.getElementById("nameUL");
     const frame = document.getElementById("frame");
     const bgVideo = document.getElementById("bgVideo");
+    const fgVideo = document.getElementById("fgVideo");
     const showStatus = msg => statusEl.textContent = msg;
 
-    /* ===== Fit the card to the largest 2:1 box inside viewport (no crop) ===== */
+    /* ===== Frame sizing (now just full screen, but kept for future tweaks) ===== */
     function sizeFrame(){
-      const W = window.innerWidth, H = window.innerHeight;
-      const targetW = Math.min(W, 2*H);   // largest width that keeps 2:1 inside viewport
-      const targetH = targetW / 2;
-      frame.style.width  = targetW + "px";
-      frame.style.height = targetH + "px";
+      frame.style.width  = "100%";
+      frame.style.height = "100%";
     }
     window.addEventListener("resize", sizeFrame);
     sizeFrame();
 
-    /* ===== Autoplay bootstrap (unchanged) ===== */
+    /* ===== Autoplay bootstrap for idle video ===== */
     document.addEventListener("DOMContentLoaded", async () => {
-      try { bgVideo.muted = true; await bgVideo.play(); showStatus("state: video • playing"); }
-      catch { showStatus("state: video • click to start"); document.addEventListener("click", ()=>bgVideo.play(),{once:true}); }
+      try {
+        bgVideo.muted = true;
+        await bgVideo.play();
+        showStatus("state: video • playing");
+      } catch {
+        showStatus("state: video • click to start");
+        document.addEventListener("click", () => bgVideo.play(), { once:true });
+      }
     });
 
-    function setState(mode,msg=""){
-      if(mode==="image"){ videoWrap.classList.add("hidden"); overlay.classList.add("visible"); try{bgVideo.pause();}catch{} }
-      else { overlay.classList.remove("visible"); videoWrap.classList.remove("hidden"); bgVideo.muted=true; bgVideo.play().catch(()=>{}); }
+    function setState(mode, msg = ""){
+      if(mode === "image"){  // "image" = overlay video mode now
+        videoWrap.classList.add("hidden");
+        overlay.classList.add("visible");
+        try { bgVideo.pause(); } catch {}
+        if (fgVideo){
+          try { fgVideo.currentTime = 0; } catch {}
+          fgVideo.play().catch(()=>{});
+        }
+      } else {               // "video" = idle background loop
+        overlay.classList.remove("visible");
+        videoWrap.classList.remove("hidden");
+        if (fgVideo){
+          try { fgVideo.pause(); } catch {}
+        }
+        bgVideo.muted = true;
+        bgVideo.play().catch(()=>{});
+      }
       showStatus(`state: ${mode} • ${msg}`);
     }
 
-    /* ===== Shrink-to-fit (single-line) ===== */
+    /* ===== Shrink-to-fit (single-line name) ===== */
     function fitText(el){
       el.style.fontSize = "";               // reset to CSS
       el.style.letterSpacing = ".01em";
@@ -220,26 +258,34 @@
       el.style.transform = "translateY(1px)";
     }
 
-    let timer=null, showing=false, lastName="";
+    let timer = null, showing = false, lastName = "";
     function showName(fullName){
       showing = true;
 
       const text = String(fullName || "Guest").trim().toUpperCase();
       nameEl.textContent = text;
 
+      // restart shimmer animation
       nameEl.classList.remove('sheen'); void nameEl.offsetWidth; nameEl.classList.add('sheen');
-      if (nameUL){ nameUL.style.animation = 'none'; void nameUL.offsetWidth; nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards'; }
+      if (nameUL){
+        nameUL.style.animation = 'none';
+        void nameUL.offsetWidth;
+        nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards';
+      }
 
       requestAnimationFrame(()=>{ fitText(nameEl); sizeFrame(); });
       setState("image", `showing "${text}"`);
 
       clearTimeout(timer);
-      timer = setTimeout(()=>{ setState("video","auto-revert"); showing=false; }, SHOW_MS);
+      timer = setTimeout(()=>{
+        setState("video","auto-revert");
+        showing = false;
+      }, SHOW_MS);
     }
 
     /* ===== Listen (show only when value changes) ===== */
     const refName = db.ref(WATCH_NAME);
-    refName.on("value", snap=>{
+    refName.on("value", snap => {
       const name = (snap.val() ?? "").toString().trim();
       console.log("[DB]", WATCH_NAME, "=>", name);
       if (!name){
@@ -250,7 +296,10 @@
         lastName = name;
         showName(name);
       }
-    }, err => { console.warn("[DB] error", err); showStatus("state: video • db error"); });
+    }, err => {
+      console.warn("[DB] error", err);
+      showStatus("state: video • db error");
+    });
 
     setState("video","listening…");
 
