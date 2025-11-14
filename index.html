@@ -14,16 +14,16 @@
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
 
-      /* USE PNG INSTEAD OF VIDEO */
+      /* PNG NAME OVERLAY */
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@e7331229cde5a64feb2aec2c70048420711a7b7c/screen2%20(1).png");
 
       /* Name placement */
-      --box-top: 45%;       /* MOVED UP */
-      --box-height: 18%;    /* MORE HEIGHT */
+      --box-top: 45%;
+      --box-height: 18%;
       --box-left: 10%;
       --box-right: 10%;
 
-      /* Gold gradient */
+      /* Gold tones */
       --gold1:#e7c072; 
       --gold2:#f6e6b8; 
       --gold3:#b88a3d;
@@ -36,24 +36,23 @@
     }
     .stage{position:fixed; inset:0; overflow:hidden}
 
-    /* Background idle video */
+    /* Background idle video ALWAYS COVER */
     .video{position:absolute; inset:0; transition:opacity var(--fade) ease}
     .video.hidden{opacity:0; pointer-events:none}
+
     video{
       position:absolute; inset:0;
       width:100%; height:100%;
-      object-fit:cover; background:#000;
+      object-fit:cover !important;   /* <— ALWAYS FILL THE SCREEN */
+      background:#000;
     }
 
-    @media (min-aspect-ratio:16/10){
-      video{ object-fit:contain; background:#000 }
-    }
-
-    /* Vignette + noise */
+    /* Subtle vignette + noise */
     .stage::after{
       content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
       background: radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0), rgba(0,0,0,.28));
     }
+
     .stage::before{
       content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
       background-image: url('data:image/svg+xml;utf8,\
@@ -160,7 +159,7 @@
 
   <script>
     /* ===== Config ===== */
-    const SHOW_MS = 5000;                 
+    const SHOW_MS = 5000;
     const EVENT_ID = "Soueast";
     const WATCH_NAME = `events/${EVENT_ID}/welcome/latest/name`;
 
@@ -242,7 +241,7 @@
       timer = setTimeout(()=>{ setState("video"); }, SHOW_MS);
     }
 
-    /* Listen for Firebase name updates */
+    /* Firebase listener */
     const refName = db.ref(WATCH_NAME);
     refName.on("value", snap=>{
       const name = (snap.val() ?? "").toString().trim();
@@ -258,3 +257,4 @@
   </script>
 </body>
 </html>
+
