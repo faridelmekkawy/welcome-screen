@@ -8,26 +8,25 @@
   <!-- Premium display font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
 
-  <!-- Favicon (can change later if you want) -->
-  <link rel="icon" href="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@e7331229cde5a64feb2aec2c70048420711a7b7c/screen2%20(1).png"/>
-
   <style>
     :root{
       --fade:.35s;
       --ink:#fff;
       --veil:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.78));
 
-      /* PNG background for the name state */
+      /* USE PNG INSTEAD OF VIDEO */
       --img-url:url("https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@e7331229cde5a64feb2aec2c70048420711a7b7c/screen2%20(1).png");
 
-      /* Name hitbox on full-screen overlay */
-      --box-top: 50%;
-      --box-height: 20%;
+      /* Name placement */
+      --box-top: 45%;       /* MOVED UP */
+      --box-height: 18%;    /* MORE HEIGHT */
       --box-left: 10%;
       --box-right: 10%;
 
-      /* Gold tones */
-      --gold1:#e7c072; --gold2:#f6e6b8; --gold3:#b88a3d;
+      /* Gold gradient */
+      --gold1:#e7c072; 
+      --gold2:#f6e6b8; 
+      --gold3:#b88a3d;
     }
 
     *{box-sizing:border-box}
@@ -45,11 +44,12 @@
       width:100%; height:100%;
       object-fit:cover; background:#000;
     }
+
     @media (min-aspect-ratio:16/10){
       video{ object-fit:contain; background:#000 }
     }
 
-    /* Subtle vignette & film noise */
+    /* Vignette + noise */
     .stage::after{
       content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
       background: radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0), rgba(0,0,0,.28));
@@ -63,42 +63,38 @@
       mix-blend-mode: overlay; opacity:.32;
     }
 
-    /* Overlay: PNG + name */
+    /* Overlay: PNG + Name */
     .overlay{
       position:absolute; inset:0; display:grid; place-items:center;
       background:var(--veil); opacity:0; pointer-events:none; transition:opacity var(--fade) ease;
     }
     .overlay.visible{ opacity:1; pointer-events:auto }
 
-    /* Full-screen PNG container */
     .frame{
       position:relative;
       width:100%;
       height:100%;
-      box-shadow: 0 24px 96px rgba(0,0,0,.55);
       overflow:hidden;
       background: center/cover no-repeat var(--img-url);
     }
 
-    /* Name hitbox on top of PNG */
+    /* Name box */
     .name-box{
       position:absolute;
       left:var(--box-left); right:var(--box-right);
-      top:var(--box-top);   height:var(--box-height);
+      top:var(--box-top); height:var(--box-height);
       display:flex; align-items:center; justify-content:center;
       padding:.3rem .8rem;
       z-index:2;
     }
-    /* .name-box.debug { outline:3px dashed #00ff91; outline-offset:-2px } */
 
     .name{
       width:100%; text-align:center; font-weight:900; text-transform:uppercase;
       color:#fff; text-shadow:0 3px 12px rgba(0,0,0,.55);
       white-space:nowrap; overflow:hidden;
       line-height:1.0;
-      letter-spacing:.01em;
       font-size:clamp(36px, 11vmin, 160px);
-      transform:translateY(1px);
+      letter-spacing:.01em;
     }
 
     @keyframes namePop {
@@ -112,18 +108,19 @@
       -webkit-background-clip:text; background-clip:text; color:transparent;
       animation: namePop .85s cubic-bezier(.2,.8,.2,1);
     }
+
     .name.sheen::after{
       content:""; position:absolute; inset:0; z-index:-1;
       background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
       transform: skewX(-18deg) translateX(-120%);
       animation: sweep 1.2s .15s ease-out both;
-      pointer-events:none;
     }
+
     @keyframes sweep { to { transform: skewX(-18deg) translateX(140%); opacity:0 } }
 
     .name-underline{
       position:absolute; left:18%; right:18%;
-      bottom:calc((100% - var(--box-height)) * -0.20);
+      bottom:-12px;
       height:3px; border-radius:999px;
       background: linear-gradient(90deg, transparent, var(--gold2), transparent);
       transform-origin:center; transform:scaleX(0);
@@ -132,16 +129,12 @@
     }
     @keyframes underlineGrow { to { transform:scaleX(1) } }
 
-    .status{
-      position:fixed; left:10px; bottom:10px;
-      font:12px ui-monospace,monospace; opacity:.85; color:#0ff;
-      z-index:10;
-    }
   </style>
 </head>
 <body>
   <div class="stage">
-    <!-- Idle background looping video (screen vid.mp4) -->
+
+    <!-- IDLE VIDEO -->
     <div class="video" id="videoWrap">
       <video id="bgVideo" autoplay muted loop playsinline preload="auto"
         poster="https://cdn.jsdelivr.net/gh/faridelmekkawy/welcome-screen@6eec26474cdc86d0f43970659520e2e14704fb16/screen%20vid.mp4">
@@ -149,7 +142,7 @@
       </video>
     </div>
 
-    <!-- Overlay: PNG + name -->
+    <!-- OVERLAY PNG + NAME -->
     <div class="overlay" id="overlay">
       <div class="frame" id="frame">
         <div class="name-box">
@@ -158,15 +151,16 @@
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Firebase compat SDKs -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database-compat.js"></script>
 
   <script>
     /* ===== Config ===== */
-    const SHOW_MS = 5000;                 // 5 seconds
+    const SHOW_MS = 5000;                 
     const EVENT_ID = "Soueast";
     const WATCH_NAME = `events/${EVENT_ID}/welcome/latest/name`;
 
@@ -181,116 +175,86 @@
     };
     firebase.initializeApp(firebaseConfig);
 
-    /* ===== Elements ===== */
     const db = firebase.database();
-    const statusEl = document.getElementById("status");
     const videoWrap = document.getElementById("videoWrap");
     const overlay = document.getElementById("overlay");
     const nameEl = document.getElementById("nameEl");
     const nameUL = document.getElementById("nameUL");
-    const frame = document.getElementById("frame");
     const bgVideo = document.getElementById("bgVideo");
-    const showStatus = msg => statusEl.textContent = msg;
+    const frame = document.getElementById("frame");
 
-    /* ===== Frame sizing (full screen) ===== */
     function sizeFrame(){
-      frame.style.width  = "100%";
+      frame.style.width = "100%";
       frame.style.height = "100%";
     }
     window.addEventListener("resize", sizeFrame);
     sizeFrame();
 
-    /* ===== Autoplay bootstrap for idle video ===== */
+    /* Autoplay bootstrap */
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         bgVideo.muted = true;
         await bgVideo.play();
-        showStatus("state: video • playing");
       } catch {
-        showStatus("state: video • click to start");
         document.addEventListener("click", () => bgVideo.play(), { once:true });
       }
     });
 
-    function setState(mode, msg = ""){
-      if(mode === "image"){  // overlay PNG mode
+    function setState(mode){
+      if(mode === "image"){
         videoWrap.classList.add("hidden");
         overlay.classList.add("visible");
-        try { bgVideo.pause(); } catch {}
-      } else {               // idle background loop
+        try{ bgVideo.pause(); }catch{}
+      } else {
         overlay.classList.remove("visible");
         videoWrap.classList.remove("hidden");
         bgVideo.muted = true;
         bgVideo.play().catch(()=>{});
       }
-      showStatus(`state: ${mode} • ${msg}`);
     }
 
-    /* ===== Shrink-to-fit (single-line name) ===== */
+    /* Shrink-to-fit */
     function fitText(el){
-      el.style.fontSize = "";               // reset to CSS
-      el.style.letterSpacing = ".01em";
+      el.style.fontSize = "";
       const parent = el.parentElement;
       let size = parseFloat(getComputedStyle(el).fontSize);
-      const min = 14;
-      while (size > min && el.scrollWidth > parent.clientWidth) {
+      const min = 20;
+      while(size > min && el.scrollWidth > parent.clientWidth){
         size -= 1;
         el.style.fontSize = size + "px";
-        if (size < 34) el.style.letterSpacing = "0";
-        if (size < 26) el.style.letterSpacing = "-0.01em";
       }
-      el.style.transform = "translateY(1px)";
     }
 
-    let timer = null, showing = false, lastName = "";
-    function showName(fullName){
-      showing = true;
+    let timer=null, lastName="";
 
+    function showName(fullName){
       const text = String(fullName || "Guest").trim().toUpperCase();
       nameEl.textContent = text;
 
-      // restart shimmer animation
       nameEl.classList.remove('sheen'); void nameEl.offsetWidth; nameEl.classList.add('sheen');
-      if (nameUL){
-        nameUL.style.animation = 'none';
-        void nameUL.offsetWidth;
-        nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards';
-      }
+      nameUL.style.animation = 'none'; void nameUL.offsetWidth;
+      nameUL.style.animation = 'underlineGrow .7s .25s cubic-bezier(.2,.8,.2,1) forwards';
 
       requestAnimationFrame(()=>{ fitText(nameEl); sizeFrame(); });
-      setState("image", `showing "${text}"`);
+      setState("image");
 
       clearTimeout(timer);
-      timer = setTimeout(()=>{
-        setState("video","auto-revert");
-        showing = false;
-      }, SHOW_MS);
+      timer = setTimeout(()=>{ setState("video"); }, SHOW_MS);
     }
 
-    /* ===== Listen (show only when value changes) ===== */
+    /* Listen for Firebase name updates */
     const refName = db.ref(WATCH_NAME);
-    refName.on("value", snap => {
+    refName.on("value", snap=>{
       const name = (snap.val() ?? "").toString().trim();
-      console.log("[DB]", WATCH_NAME, "=>", name);
-      if (!name){
-        if (!overlay.classList.contains("visible")) setState("video","waiting…");
+      if(!name){
+        if(!overlay.classList.contains("visible")) setState("video");
         return;
       }
-      if (name !== lastName){
+      if(name !== lastName){
         lastName = name;
         showName(name);
       }
-    }, err => {
-      console.warn("[DB] error", err);
-      showStatus("state: video • db error");
     });
-
-    setState("video","listening…");
-
-    /* Optional: show hitbox outline with ?debug=1 */
-    if (new URLSearchParams(location.search).get('debug')){
-      document.querySelector('.name-box')?.classList.add('debug');
-    }
   </script>
 </body>
 </html>
